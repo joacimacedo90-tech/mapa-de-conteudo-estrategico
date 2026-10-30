@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { User, Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits } from '../src/types';
+import { User, Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits, FreeAccessRequest } from '../src/types';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -16,6 +16,7 @@ interface DatabaseSchema {
   };
   webhookLogs: WebhookLog[];
   customerAccesses?: CustomerAccess[];
+  freeAccessRequests?: FreeAccessRequest[];
 }
 
 export const DEFAULT_PLANS: PricingPlan[] = [
@@ -144,6 +145,7 @@ function loadDatabase(): DatabaseSchema {
       cache = JSON.parse(content);
       if (cache) {
         if (!cache.customerAccesses) cache.customerAccesses = [];
+        if (!cache.freeAccessRequests) cache.freeAccessRequests = [];
         // Ensure 3 plans are present and properly structured with limits
         if (!cache.settings.plans || cache.settings.plans.length !== 3 || cache.settings.plans.some(p => p.id === 'vip' || !p.limits)) {
           cache.settings.plans = DEFAULT_PLANS;
@@ -173,7 +175,8 @@ function loadDatabase(): DatabaseSchema {
       headlineBanner: 'Oferta Especial de Lançamento: Desbloqueie sua estratégia completa com desconto exclusivo!'
     },
     webhookLogs: [],
-    customerAccesses: []
+    customerAccesses: [],
+    freeAccessRequests: []
   };
 
   saveDatabase(initialData);
@@ -510,6 +513,140 @@ export const db = {
       return access;
     }
     return null;
+  },
+
+  // Free Access Requests
+  createFreeAccessRequest(name: string, email: string): FreeAccessRequest {
+    const data = loadDatabase();
+    if (!data.freeAccessRequests) data.freeAccessRequests = [];
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const existing = data.freeAccessRequests.find(
+      (r) => r.email.toLowerCase() === normalizedEmail && r.status === 'Aguardando aprovação'
+    );
+    if (existing) {
+      existing.name = name.trim();
+      existing.updatedAt = new Date().toISOString();
+      saveDatabase(data);
+      return existing;
+    }
+
+    const newReq: FreeAccessRequest = {
+      id: crypto.randomUUID(),
+      name: name.trim(),
+      email: normalizedEmail,
+      status: 'Aguardando aprovação',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    data.freeAccessRequests.unshift(newReq);
+    saveDatabase(data);
+    return newReq;
+  },
+
+  getFreeAccessRequests(): FreeAccessRequest[] {
+    const data = loadDatabase();
+    return data.freeAccessRequests || [];
+  },
+
+  getFreeAccessRequestById(id: string): FreeAccessRequest | null {
+    const data = loadDatabase();
+    if (!data.freeAccessRequests) return null;
+    return data.freeAccessRequests.find((r) => r.id === id) || null;
+  },
+
+  getFreeAccessRequestByToken(token: string): FreeAccessRequest | null {
+    const data = loadDatabase();
+    if (!data.freeAccessRequests) return null;
+    return data.freeAccessRequests.find((r) => r.inviteToken === token) || null;
+  },
+
+  approveFreeAccessRequest(id: string): { request: FreeAccessRequest; inviteToken: string } {
+    const data = loadDatabase();
+    if (!data.freeAccessRequests) data.freeAccessRequests = [];
+    const req = data.freeAccessRequests.find((r) => r.id === id);
+    if (!req) {
+      throw new Error('Solicitação não encontrada');
+    }
+
+    const token = crypto.randomBytes(24).toString('hex');
+    req.status = 'Aprovado';
+    req.reviewedAt = new Date().toISOString();
+    req.inviteToken = token;
+    req.inviteExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    req.inviteUsedAt = undefined;
+    req.updatedAt = new Date().toISOString();
+
+    saveDatabase(data);
+    return { request: req, inviteToken: token };
+  },
+
+  rejectFreeAccessRequest(id: string, reason?: string): FreeAccessRequest {
+    const data = loadDatabase();
+    if (!data.freeAccessRequests) data.freeAccessRequests = [];
+    const req = data.freeAccessRequests.find((r) => r.id === id);
+    if (!req) {
+      throw new Error('Solicitação não encontrada');
+    }
+
+    req.status = 'Recusado';
+    req.reviewedAt = new Date().toISOString();
+    req.rejectionReason = reason || 'Solicitação recusada pelo administrador.';
+    req.inviteToken = undefined;
+    req.inviteExpiresAt = undefined;
+    req.updatedAt = new Date().toISOString();
+
+    saveDatabase(data);
+    return req;
+  },
+
+  activateFreeAccessInvite(token: string, password: string): { user: User; request: FreeAccessRequest } {
+    const data = loadDatabase();
+    if (!data.freeAccessRequests) data.freeAccessRequests = [];
+    const req = data.freeAccessRequests.find((r) => r.inviteToken === token);
+    if (!req) {
+      throw new Error('Convite inválido ou não encontrado.');
+    }
+
+    if (req.status !== 'Aprovado') {
+      throw new Error('Esta solicitação não foi aprovada pelo administrador.');
+    }
+
+    if (req.inviteUsedAt) {
+      throw new Error('Este convite já foi utilizado para ativar uma conta.');
+    }
+
+    if (req.inviteExpiresAt && new Date() > new Date(req.inviteExpiresAt)) {
+      throw new Error('Este convite expirou (validade de 48 horas excedida). Solicite um novo acesso.');
+    }
+
+    // Check if user already exists
+    let existingUser = data.users.find((u) => u.email.toLowerCase() === req.email.toLowerCase());
+    if (existingUser) {
+      const { hash, salt } = hashPassword(password);
+      existingUser.passwordHash = hash;
+      existingUser.salt = salt;
+    } else {
+      const { hash, salt } = hashPassword(password);
+      const newUser = {
+        id: crypto.randomUUID(),
+        email: req.email.toLowerCase(),
+        name: req.name,
+        role: 'user' as const,
+        createdAt: new Date().toISOString(),
+        passwordHash: hash,
+        salt
+      };
+      data.users.push(newUser);
+      existingUser = newUser;
+    }
+
+    req.inviteUsedAt = new Date().toISOString();
+    req.updatedAt = new Date().toISOString();
+
+    saveDatabase(data);
+    const { passwordHash: _, salt: __, ...safeUser } = existingUser;
+    return { user: safeUser, request: req };
   }
 };
 

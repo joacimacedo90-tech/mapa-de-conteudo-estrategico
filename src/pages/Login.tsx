@@ -121,10 +121,44 @@ export const Login: React.FC<LoginProps> = ({
 
       {/* Form Container */}
       <div className="bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm dark:shadow-none transition-colors">
+        {mode === 'register' && (
+          <div className="p-4 rounded-xl bg-[#ee4957]/10 border border-[#ee4957]/30 text-xs space-y-2">
+            <div className="flex items-center gap-2 font-bold text-zinc-900 dark:text-white">
+              <span className="w-2 h-2 rounded-full bg-[#ee4957]" />
+              <span>Deseja criar uma conta gratuita?</span>
+            </div>
+            <p className="text-zinc-600 dark:text-zinc-400 text-[11px] leading-relaxed">
+              O acesso gratuito agora requer solicitação e aprovação prévia do administrador.
+            </p>
+            <button
+              type="button"
+              onClick={() => onNavigate('solicitar-acesso')}
+              className="w-full py-2 px-3 rounded-lg bg-[#ee4957] hover:bg-[#d93c4a] text-white font-bold text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+            >
+              <span>Solicitar Acesso Gratuito Aqui</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+            <div className="pt-1 text-[10px] text-zinc-500 dark:text-zinc-400 text-center">
+              Comprou um plano na Hotmart? Use o formulário abaixo com o e-mail da compra para ativar sua conta paga instantaneamente.
+            </div>
+          </div>
+        )}
+
         {error && (
-          <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-800 dark:text-red-200 text-xs flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-[#ee4957] shrink-0 mt-0.5" />
-            <span>{error}</span>
+          <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/60 text-red-800 dark:text-red-200 text-xs flex flex-col gap-2">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-[#ee4957] shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+            {error.includes('aprovação prévia') && (
+              <button
+                type="button"
+                onClick={() => onNavigate('solicitar-acesso')}
+                className="self-start mt-1 text-[11px] font-bold text-[#ee4957] underline hover:opacity-80 cursor-pointer"
+              >
+                Clique aqui para preencher o formulário de solicitação de acesso gratuito →
+              </button>
+            )}
           </div>
         )}
 

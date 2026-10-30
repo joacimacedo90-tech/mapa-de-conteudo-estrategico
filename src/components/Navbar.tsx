@@ -97,6 +97,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             Comparar Planos
           </button>
           <button
+            onClick={() => onNavigate('solicitar-acesso')}
+            className={`text-sm font-medium transition-colors cursor-pointer ${
+              currentPage === 'solicitar-acesso'
+                ? 'text-[#ee4957] font-bold'
+                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+            }`}
+          >
+            Solicitar Acesso Gratuito
+          </button>
+          <button
             onClick={() => onNavigate('my-reports')}
             className={`text-sm font-medium transition-colors cursor-pointer ${
               currentPage === 'my-reports'
@@ -208,6 +218,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="w-full text-left px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
           >
             Comparar Planos
+          </button>
+          <button
+            onClick={() => {
+              onNavigate('solicitar-acesso');
+              setMobileMenuOpen(false);
+            }}
+            className="w-full text-left px-3 py-2 text-sm text-[#ee4957] font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg flex items-center justify-between"
+          >
+            <span>Solicitar Acesso Gratuito</span>
+            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#ee4957]/10 text-[#ee4957]">
+              Sem Cartão
+            </span>
           </button>
           <button
             onClick={() => {

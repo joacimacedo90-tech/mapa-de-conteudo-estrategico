@@ -9,6 +9,8 @@ import { Login } from './pages/Login';
 import { MyReports } from './pages/MyReports';
 import { Admin } from './pages/Admin';
 import { Comparison } from './pages/Comparison';
+import { FreeAccessRequestPage } from './pages/FreeAccessRequest';
+import { ActivateAccount } from './pages/ActivateAccount';
 import { api, getAuthToken, setAuthToken, getAdminToken, setAdminToken } from './api';
 import { User } from './types';
 import { ThemeProvider } from './context/ThemeContext';
@@ -17,6 +19,7 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [activeReportId, setActiveReportId] = useState<string>('');
   const [selectedPlanId, setSelectedPlanId] = useState<string>('pro');
+  const [activationToken, setActivationToken] = useState<string>('');
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(Boolean(getAdminToken()));
@@ -35,12 +38,16 @@ export default function App() {
         });
     }
 
-    // Check URL query parameters for direct links (e.g. ?report=XYZ or ?page=checkout)
+    // Check URL query parameters for direct links (e.g. ?report=XYZ or ?page=checkout or ?token=XYZ)
     const urlParams = new URLSearchParams(window.location.search);
     const reportParam = urlParams.get('report') || urlParams.get('reportId');
     const pageParam = urlParams.get('page');
+    const tokenParam = urlParams.get('token');
 
-    if (reportParam) {
+    if (tokenParam || pageParam === 'ativar-conta') {
+      if (tokenParam) setActivationToken(tokenParam);
+      setCurrentPage('ativar-conta');
+    } else if (reportParam) {
       setActiveReportId(reportParam);
       if (pageParam === 'checkout') {
         setCurrentPage('checkout');
@@ -132,6 +139,27 @@ export default function App() {
             <Comparison
               reportId={activeReportId || undefined}
               onNavigate={navigateTo}
+            />
+          )}
+
+          {currentPage === 'solicitar-acesso' && (
+            <FreeAccessRequestPage
+              onNavigate={navigateTo}
+              onOpenLgpd={() => setLgpdModalOpen(true)}
+            />
+          )}
+
+          {currentPage === 'ativar-conta' && (
+            <ActivateAccount
+              tokenFromUrl={activationToken}
+              onLoginSuccess={(user) => {
+                setCurrentUser(user);
+                if (activeReportId) {
+                  api.claimReport(activeReportId).catch(console.error);
+                }
+              }}
+              onNavigate={navigateTo}
+              onOpenLgpd={() => setLgpdModalOpen(true)}
             />
           )}
 

@@ -130,6 +130,65 @@ A estrutura deve conter exatamente as seguintes chaves principais:
       ],
       "leadConversionEstimate": "Estimativa de 40 a 180 clientes potenciais chamando no Direct durante os 90 dias com aplicação correta das chamadas (CTAs).",
       "integrityDisclaimer": "Projeções estatísticas baseadas na média de tração orgânica do algoritmo do Instagram para contas ativas com execução consistente da estratégia nos 90 dias. Não comercializamos seguidores artificiais nem automações proibidas."
+    },
+    "powerPreview": {
+      "currentPowerScore": 38,
+      "maxPowerScore": 96,
+      "untappedPotentialPercentage": 58,
+      "powerStatusLabel": "Motor em Ponto Morto com Alta Capacidade Reprimida",
+      "estimatedMonthlyLostReach": "40.000 a 110.000 contas que não descobrem o perfil",
+      "estimatedLostLeads": "20 a 55 clientes potenciais perdidos no Direct todo mês",
+      "powerPillars": [
+        {
+          "name": "Potência de Descoberta & Reels (Atração Orgânica)",
+          "currentPercentage": 35,
+          "potentialPercentage": 92,
+          "diagnosis": "O algoritmo corta a entrega nos primeiros 3s devido à falta de ganchos visuais e quebra de padrão.",
+          "unlockedWith": "10 Roteiros de Reels Prontos com Ganchos Hipnóticos"
+        },
+        {
+          "name": "Potência de Retenção & Carrosséis (Autoridade)",
+          "currentPercentage": 42,
+          "potentialPercentage": 95,
+          "diagnosis": "Posts sem estrutura sequencial de retenção não geram salvamentos e enfraquecem a autoridade.",
+          "unlockedWith": "10 Carrosséis Estruturados Slide a Slide"
+        },
+        {
+          "name": "Potência de Conversão & Stories (Vendas no Direct)",
+          "currentPercentage": 28,
+          "potentialPercentage": 90,
+          "diagnosis": "Stories aleatórios sem funil de enquetes nem chamadas direcionadas deixam dinheiro na mesa.",
+          "unlockedWith": "10 Sequências de Stories de Alta Conversão"
+        },
+        {
+          "name": "Potência de Consistência & Algoritmo (Escala)",
+          "currentPercentage": 18,
+          "potentialPercentage": 98,
+          "diagnosis": "Inconstância de postagem faz o algoritmo despriorizar o perfil nas abas Explorar e Reels.",
+          "unlockedWith": "Calendário Editorial Estratégico de 90 Dias"
+        }
+      ],
+      "powerLeaks": [
+        {
+          "title": "Bio com Dispersão de Visitantes",
+          "leakDescription": "Visitantes que chegam pelo tráfego ou Reels não entendem em 3 segundos o que você faz e saem sem seguir.",
+          "impactLevel": "Crítica",
+          "unlockedSolution": "Aplicar a Bio Magnética com posicionamento claro, autoridade e chamada de 1 clique."
+        },
+        {
+          "title": "Vídeos sem Quebra de Padrão Inicial",
+          "leakDescription": "Falta de gancho visual de impacto imediato causa queda drástica de retenção antes de 3 segundos.",
+          "impactLevel": "Crítica",
+          "unlockedSolution": "Usar ganchos visuais de movimento, texto dinâmico e gancho verbal nos primeiros 3s."
+        },
+        {
+          "title": "Ausência de Funil de Vendas na DM",
+          "leakDescription": "Publicações que ensinam e informam, mas terminam sem nenhuma chamada específica para atendimento privado.",
+          "impactLevel": "Alta",
+          "unlockedSolution": "Ganchos com palavras-chave nos comentários para puxar o seguidor para conversa privada."
+        }
+      ],
+      "quickWinAction": "Copie a Bio Magnética sugerida e publique o Reel #1 com o gancho visual de quebra de padrão para sentir o destravamento imediato."
     }
   },
   "contentIdeas": [
@@ -304,6 +363,77 @@ A estrutura deve conter exatamente as seguintes chaves principais:
         ],
         leadConversionEstimate: 'Estimativa de 50 a 180 clientes potenciais chamando no Direct ao longo dos 90 dias.',
         integrityDisclaimer: 'Projeções estatísticas baseadas na média de tração orgânica do algoritmo do Instagram para perfis consistentes no nicho. Resultados dependem da execução e da aceitação da audiência.'
+      };
+    }
+
+    // Ensure powerPreview exists with smart values if missing
+    if (!parsed.diagnosis.powerPreview || !parsed.diagnosis.powerPreview.powerPillars || parsed.diagnosis.powerPreview.powerPillars.length === 0) {
+      const overall = typeof parsed.diagnosis.overallScore === 'number' ? parsed.diagnosis.overallScore : 72;
+      const currentPower = Math.max(26, Math.min(50, Math.round(overall * 0.48)));
+      const maxPower = Math.min(98, Math.max(90, Math.round(overall * 1.15) || 94));
+      parsed.diagnosis.powerPreview = {
+        currentPowerScore: currentPower,
+        maxPowerScore: maxPower,
+        untappedPotentialPercentage: maxPower - currentPower,
+        powerStatusLabel:
+          currentPower < 35
+            ? 'Motor em Ponto Morto com Potencial Oculto Elevado'
+            : currentPower < 45
+            ? 'Potência Parcial com Fugas Críticas de Atenção'
+            : 'Perfil Aquecido Pronto para Tração e Escala',
+        estimatedMonthlyLostReach: '35.000 a 110.000 contas únicas',
+        estimatedLostLeads: '20 a 50 clientes potenciais no Direct',
+        powerPillars: [
+          {
+            name: 'Potência de Descoberta & Reels (Atração Orgânica)',
+            currentPercentage: Math.round(currentPower * 0.9),
+            potentialPercentage: 92,
+            diagnosis: 'Falta de quebra de padrão visual e gancho verbal nos primeiros 3s limita a entrega do algoritmo.',
+            unlockedWith: '10 Roteiros de Reels Prontos com Ganchos Hipnóticos'
+          },
+          {
+            name: 'Potência de Retenção & Carrosséis (Autoridade)',
+            currentPercentage: Math.round(currentPower * 1.05),
+            potentialPercentage: 95,
+            diagnosis: 'Postagens estáticas sem divisão estratégica de slides têm baixa taxa de salvamento e compartilhamento.',
+            unlockedWith: '10 Carrosséis Estruturados Slide a Slide'
+          },
+          {
+            name: 'Potência de Conversão & Stories (Vendas no Direct)',
+            currentPercentage: Math.round(currentPower * 0.75),
+            potentialPercentage: 90,
+            diagnosis: 'Stories aleatórios sem caixas de perguntas estratégicas nem funil de vendas para a DM.',
+            unlockedWith: '10 Sequências de Stories de Alta Conversão'
+          },
+          {
+            name: 'Potência de Consistência & Algoritmo (90 Dias)',
+            currentPercentage: Math.round(currentPower * 0.55),
+            potentialPercentage: 98,
+            diagnosis: 'Inconstância de postagem confunde o algoritmo do Instagram e reduz o alcance das postagens.',
+            unlockedWith: 'Calendário Editorial Estratégico de 90 Dias'
+          }
+        ],
+        powerLeaks: [
+          {
+            title: 'Bio com Dispersão de Visitantes',
+            leakDescription: 'Visitantes que chegam pelo tráfego ou Reels não entendem em 3 segundos o que você faz e saem sem seguir.',
+            impactLevel: 'Crítica',
+            unlockedSolution: 'Aplicar a Bio Magnética com posicionamento claro, autoridade e chamada de 1 clique.'
+          },
+          {
+            title: 'Vídeos sem Quebra nos Primeiros 3 Segundos',
+            leakDescription: 'Falta de gancho visual de impacto imediato causa queda drástica de retenção antes de 3 segundos.',
+            impactLevel: 'Crítica',
+            unlockedSolution: 'Usar ganchos visuais de movimento, texto dinâmico e gancho verbal nos primeiros 3s.'
+          },
+          {
+            title: 'Ausência de Funil de Vendas na DM',
+            leakDescription: 'Publicações que ensinam e informam, mas terminam sem nenhuma chamada específica para atendimento privado.',
+            impactLevel: 'Alta',
+            unlockedSolution: 'Ganchos com palavras-chave nos comentários para puxar o seguidor para conversa privada.'
+          }
+        ],
+        quickWinAction: `Copie a Bio Magnética sugerida para @${params.username} e aplique o gancho do Reel #1 nas próximas 24 horas para destravar tração.`
       };
     }
 

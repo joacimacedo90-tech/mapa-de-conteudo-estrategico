@@ -123,6 +123,33 @@ export interface HooksAndCtas {
   }[];
 }
 
+export interface PowerLeak {
+  title: string;
+  leakDescription: string;
+  impactLevel: 'Crítica' | 'Alta' | 'Moderada';
+  unlockedSolution: string;
+}
+
+export interface PowerPillarMeter {
+  name: string;
+  currentPercentage: number;
+  potentialPercentage: number;
+  diagnosis: string;
+  unlockedWith: string;
+}
+
+export interface PowerPreviewData {
+  currentPowerScore: number;
+  maxPowerScore: number;
+  untappedPotentialPercentage: number;
+  powerStatusLabel: string;
+  estimatedMonthlyLostReach: string;
+  estimatedLostLeads: string;
+  powerPillars: PowerPillarMeter[];
+  powerLeaks: PowerLeak[];
+  quickWinAction: string;
+}
+
 export interface PositioningDiagnosis {
   overallScore: number;
   bioAnalysis: {
@@ -145,6 +172,7 @@ export interface PositioningDiagnosis {
   growthOpportunities: string[];
   competitiveEdge: string;
   growthProjection?: GrowthProjection;
+  powerPreview?: PowerPreviewData;
 }
 
 export interface Report {
@@ -241,3 +269,18 @@ export interface WebhookLog {
   planId?: string;
   rawPayloadSummary: string;
 }
+
+export interface FreeAccessRequest {
+  id: string;
+  name: string;
+  email: string;
+  status: 'Aguardando aprovação' | 'Aprovado' | 'Recusado';
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  inviteToken?: string;
+  inviteExpiresAt?: string;
+  inviteUsedAt?: string;
+}
+

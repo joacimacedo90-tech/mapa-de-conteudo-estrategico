@@ -1,5 +1,15 @@
 {
-  "users": [],
+  "users": [
+    {
+      "id": "02ce6878-589b-49e4-80bc-d673fb616eb8",
+      "email": "teste.gratuito@exemplo.com",
+      "name": "Usuário Teste",
+      "role": "user",
+      "createdAt": "2026-10-30T22:28:44.533Z",
+      "passwordHash": "dc7713f79269063d4b2259048309a01a975d9fc9ef64389b0ad7f4a3b7cd085fd1edccc4309bbf153ddd88c0f267ebeeaa6c90969888e614a91ebd4ce962bf80",
+      "salt": "b1a51acf24d0a48f1dceba38f6bb8510"
+    }
+  ],
   "reports": [],
   "settings": {
     "adminPasswordConfigured": true,
@@ -113,5 +123,19 @@
     "headlineBanner": "Oferta Especial Hotmart: Desbloqueie sua estratégia nos planos Essencial (R$ 47), Pro (R$ 97) ou Premium (R$ 197)!"
   },
   "webhookLogs": [],
-  "customerAccesses": []
+  "customerAccesses": [],
+  "freeAccessRequests": [
+    {
+      "id": "af865db5-af0a-49a2-837a-b1310a7f04f3",
+      "name": "Usuário Teste",
+      "email": "teste.gratuito@exemplo.com",
+      "status": "Aprovado",
+      "createdAt": "2026-10-30T22:27:55.690Z",
+      "updatedAt": "2026-10-30T22:28:44.533Z",
+      "reviewedAt": "2026-10-30T22:28:39.489Z",
+      "inviteToken": "24acff7c4258f22bd0490ff873f2d6d1554be35c3f9feca6",
+      "inviteExpiresAt": "2026-11-01T22:28:39.489Z",
+      "inviteUsedAt": "2026-10-30T22:28:44.533Z"
+    }
+  ]
 }

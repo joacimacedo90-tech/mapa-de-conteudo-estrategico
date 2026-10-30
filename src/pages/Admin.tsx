@@ -23,10 +23,15 @@ import {
   Layers,
   Calendar,
   Lock,
-  ArrowRight
+  ArrowRight,
+  UserCheck,
+  UserX,
+  Clock,
+  Send,
+  MailCheck
 } from 'lucide-react';
 import { api } from '../api';
-import { Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits } from '../types';
+import { Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits, FreeAccessRequest } from '../types';
 
 interface AdminProps {
   onLogoutAdmin: () => void;
@@ -34,13 +39,16 @@ interface AdminProps {
 }
 
 export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
-  const [tab, setTab] = useState<'reports' | 'plans' | 'settings' | 'webhooks' | 'accesses'>('reports');
+  const [tab, setTab] = useState<'reports' | 'plans' | 'settings' | 'webhooks' | 'accesses' | 'free-access'>('reports');
 
   // Data states
   const [reports, setReports] = useState<Report[]>([]);
   const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
   const [customerAccesses, setCustomerAccesses] = useState<CustomerAccess[]>([]);
+  const [freeAccessRequests, setFreeAccessRequests] = useState<FreeAccessRequest[]>([]);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Filter / Search
@@ -78,11 +86,12 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [reportsRes, settingsRes, webhooksRes, accessesRes] = await Promise.all([
+      const [reportsRes, settingsRes, webhooksRes, accessesRes, freeRes] = await Promise.all([
         api.getAdminReports(),
         api.getAdminSettings(),
         api.getAdminWebhooks(),
-        api.getAdminCustomerAccesses().catch(() => ({ accesses: [] }))
+        api.getAdminCustomerAccesses().catch(() => ({ accesses: [] })),
+        api.getAdminFreeAccessRequests().catch(() => ({ requests: [] }))
       ]);
 
       setReports(reportsRes.reports);
@@ -93,12 +102,50 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
       setMetaAccountId(settingsRes.settings.metaAccountId || '');
       setWebhookLogs(webhooksRes.logs);
       setCustomerAccesses(accessesRes.accesses || []);
+      setFreeAccessRequests(freeRes.requests || []);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Falha ao carregar dados administrativos';
       setNotice({ type: 'error', text: msg });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApproveFreeAccess = async (id: string) => {
+    try {
+      setActionLoadingId(id);
+      const res = await api.adminApproveFreeAccessRequest(id);
+      showNotification('Solicitação aprovada! Convite seguro gerado com validade de 48 horas.');
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao aprovar solicitação';
+      showNotification(msg, 'error');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleRejectFreeAccess = async (id: string) => {
+    const reason = window.prompt('Motivo da recusa (opcional):') ?? undefined;
+    try {
+      setActionLoadingId(id);
+      await api.adminRejectFreeAccessRequest(id, reason);
+      showNotification('Solicitação de acesso recusada.');
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao recusar solicitação';
+      showNotification(msg, 'error');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleCopyInviteLink = (token: string, id: string) => {
+    const link = `${window.location.origin}/?page=ativar-conta&token=${token}`;
+    navigator.clipboard.writeText(link);
+    setCopiedInviteId(id);
+    setTimeout(() => setCopiedInviteId(null), 2500);
+    showNotification('Link de convite de uso único copiado para a área de transferência!');
   };
 
   useEffect(() => {
@@ -296,39 +343,51 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
-          <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-            Total de Relatórios
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+          <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+            Total Relatórios
           </span>
-          <div className="text-2xl font-black text-zinc-900 dark:text-white font-heading">{totalReports}</div>
-          <p className="text-[10px] text-zinc-500">Perfis de Instagram analisados</p>
+          <div className="text-xl font-black text-zinc-900 dark:text-white font-heading">{totalReports}</div>
+          <p className="text-[10px] text-zinc-500">Perfis analisados</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
-          <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+          <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
             Relatórios Pagos
           </span>
-          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-heading">{paidReports}</div>
-          <p className="text-[10px] text-zinc-500">Desbloqueados via Hotmart / PIX</p>
+          <div className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-heading">{paidReports}</div>
+          <p className="text-[10px] text-zinc-500">Desbloqueados</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
-          <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+          <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
             Assinantes Ativos
           </span>
-          <div className="text-2xl font-black text-[#ee4957] font-heading">{activeAccesses}</div>
-          <p className="text-[10px] text-zinc-500">Clientes com acesso regular</p>
+          <div className="text-xl font-black text-[#ee4957] font-heading">{activeAccesses}</div>
+          <p className="text-[10px] text-zinc-500">Hotmart oficial</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
-          <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-            Webhooks Recebidos
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+          <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+            Solicitações Gratuitas
           </span>
-          <div className="text-2xl font-black text-zinc-900 dark:text-white font-heading">
+          <div className="text-xl font-black text-amber-500 font-heading">
+            {freeAccessRequests.filter((r) => r.status === 'Aguardando aprovação').length}
+          </div>
+          <p className="text-[10px] text-zinc-500">
+            {freeAccessRequests.length} no total ({freeAccessRequests.filter((r) => r.status === 'Aprovado').length} aprovadas)
+          </p>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 space-y-1 shadow-sm">
+          <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+            Webhooks
+          </span>
+          <div className="text-xl font-black text-zinc-900 dark:text-white font-heading">
             {webhookLogs.length}
           </div>
-          <p className="text-[10px] text-zinc-500">Eventos auditados na base</p>
+          <p className="text-[10px] text-zinc-500">Eventos na base</p>
         </div>
       </div>
 
@@ -368,6 +427,23 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
         >
           <Users className="w-4 h-4" />
           <span>Registro de Assinantes ({customerAccesses.length})</span>
+        </button>
+
+        <button
+          onClick={() => setTab('free-access')}
+          className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            tab === 'free-access'
+              ? 'bg-[#ee4957] text-white font-bold'
+              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          <span>Solicitações de Acesso Gratuito ({freeAccessRequests.length})</span>
+          {freeAccessRequests.filter((r) => r.status === 'Aguardando aprovação').length > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white animate-pulse">
+              {freeAccessRequests.filter((r) => r.status === 'Aguardando aprovação').length} pendente(s)
+            </span>
+          )}
         </button>
 
         <button
@@ -835,8 +911,210 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
       )}
 
       {/* =================================================== */}
-      {/* TAB 4: WEBHOOK LOGS & TESTER                        */}
+      {/* TAB: FREE ACCESS REQUESTS                           */}
       {/* =================================================== */}
+      {tab === 'free-access' && (
+        <div className="bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm space-y-0">
+          <div className="p-4 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white font-heading flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-[#ee4957]" />
+                <span>Solicitações de Acesso Gratuito</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ee4957]/15 text-[#ee4957] border border-[#ee4957]/30">
+                  {freeAccessRequests.length} solicitações
+                </span>
+              </h4>
+              <p className="text-xs text-zinc-500 mt-1">
+                Conforme a nova regra de acesso gratuito: contas não são criadas automaticamente. O administrador analisa, aprova ou recusa, gerando um link de convite seguro de uso único válido por 48 horas.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={loadData}
+              className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-900 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Atualizar Lista</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-zinc-100 dark:bg-zinc-900/90 text-zinc-700 dark:text-zinc-400 font-semibold uppercase text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                <tr>
+                  <th className="py-3 px-4">Solicitante</th>
+                  <th className="py-3 px-4">Data do Pedido</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Convite / Validade (48h)</th>
+                  <th className="py-3 px-4 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/80">
+                {freeAccessRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-zinc-400 dark:text-zinc-500">
+                      <div className="max-w-sm mx-auto space-y-2">
+                        <Clock className="w-8 h-8 text-zinc-300 dark:text-zinc-700 mx-auto" />
+                        <p className="font-semibold text-zinc-700 dark:text-zinc-300">Nenhuma solicitação de acesso gratuito registrada ainda.</p>
+                        <p className="text-[11px] text-zinc-500">
+                          Quando um usuário preencher o formulário público na página de Solicitar Acesso Gratuito, seu pedido aparecerá aqui para aprovação.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  freeAccessRequests.map((req) => {
+                    const isApproved = req.status === 'Aprovado';
+                    const isPending = req.status === 'Aguardando aprovação';
+                    const isRejected = req.status === 'Recusado';
+                    const isActivated = !!req.inviteUsedAt;
+                    const isExpired = req.inviteExpiresAt ? new Date(req.inviteExpiresAt) < new Date() : false;
+
+                    return (
+                      <tr key={req.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors">
+                        <td className="py-3.5 px-4 font-bold text-zinc-900 dark:text-white">
+                          <div className="flex items-center gap-2">
+                            <span>{req.name}</span>
+                          </div>
+                          <div className="text-[11px] text-zinc-500 font-mono font-normal">{req.email}</div>
+                        </td>
+
+                        <td className="py-3.5 px-4 text-zinc-500 whitespace-nowrap">
+                          {new Date(req.createdAt).toLocaleString('pt-BR', {
+                            dateStyle: 'short',
+                            timeStyle: 'short'
+                          })}
+                        </td>
+
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {isPending && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                              <Clock className="w-3 h-3" />
+                              <span>Aguardando aprovação</span>
+                            </span>
+                          )}
+                          {isApproved && (
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                <UserCheck className="w-3 h-3" />
+                                <span>Aprovado</span>
+                              </span>
+                              {isActivated ? (
+                                <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                                  ✓ Conta ativada
+                                </div>
+                              ) : isExpired ? (
+                                <div className="text-[10px] text-red-500 font-medium">
+                                  Convite expirado
+                                </div>
+                              ) : (
+                                <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                                  Aguardando ativação pelo usuário
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {isRejected && (
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 dark:bg-red-950/70 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
+                                <UserX className="w-3 h-3" />
+                                <span>Recusado</span>
+                              </span>
+                              {req.rejectionReason && (
+                                <div className="text-[10px] text-zinc-500 max-w-xs truncate" title={req.rejectionReason}>
+                                  Motivo: {req.rejectionReason}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-4 text-xs">
+                          {req.inviteToken ? (
+                            <div className="space-y-1.5 max-w-xs">
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyInviteLink(req.inviteToken!, req.id)}
+                                  className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                  {copiedInviteId === req.id ? (
+                                    <>
+                                      <Check className="w-3 h-3 text-emerald-500" />
+                                      <span className="text-emerald-600 dark:text-emerald-400">Link Copiado!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3 h-3 text-[#ee4957]" />
+                                      <span>Copiar Link de Ativação</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                              {req.inviteExpiresAt && (
+                                <div className="text-[10px] text-zinc-500 flex items-center gap-1">
+                                  <Clock className="w-3 h-3 text-zinc-400" />
+                                  <span>
+                                    Expira: {new Date(req.inviteExpiresAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-zinc-400 dark:text-zinc-600 text-[11px]">—</span>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2">
+                            {(isPending || isRejected) && (
+                              <button
+                                type="button"
+                                disabled={actionLoadingId === req.id}
+                                onClick={() => handleApproveFreeAccess(req.id)}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>{isRejected ? 'Reaprovar' : 'Aprovar'}</span>
+                              </button>
+                            )}
+
+                            {isPending && (
+                              <button
+                                type="button"
+                                disabled={actionLoadingId === req.id}
+                                onClick={() => handleRejectFreeAccess(req.id)}
+                                className="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-950/70 hover:bg-red-200 dark:hover:bg-red-900 text-red-700 dark:text-red-400 font-bold text-[11px] flex items-center gap-1 border border-red-200 dark:border-red-800 transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                <UserX className="w-3.5 h-3.5" />
+                                <span>Recusar</span>
+                              </button>
+                            )}
+
+                            {isApproved && (
+                              <button
+                                type="button"
+                                disabled={actionLoadingId === req.id}
+                                onClick={() => handleApproveFreeAccess(req.id)}
+                                title="Gera um novo link e estende a validade por mais 48 horas"
+                                className="px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium text-[11px] flex items-center gap-1 transition-all cursor-pointer"
+                              >
+                                <Send className="w-3 h-3 text-[#ee4957]" />
+                                <span>Regerar Link</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       {tab === 'webhooks' && (
         <div className="space-y-6">
           {/* Webhook Endpoint Card */}

@@ -24,10 +24,12 @@ import {
   Flame,
   ShieldAlert,
   ArrowUpRight,
-  BarChart3
+  BarChart3,
+  Zap
 } from 'lucide-react';
 import { api } from '../api';
 import { Report, ContentIdea, ReelScript, CarouselPost, StorySequence, CalendarDay } from '../types';
+import { PowerPreviewSection } from '../components/PowerPreviewSection';
 
 interface ReportPageProps {
   reportId: string;
@@ -42,7 +44,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({
   const [report, setReport] = useState<Report | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'diagnosis' | 'ideas' | 'reels' | 'carousels' | 'stories' | 'hooks' | 'calendar'>('diagnosis');
+  const [activeTab, setActiveTab] = useState<'potencia' | 'diagnosis' | 'ideas' | 'reels' | 'carousels' | 'stories' | 'hooks' | 'calendar'>('potencia');
   const [selectedMonth, setSelectedMonth] = useState<0 | 1 | 2 | 3>(0);
   const [selectedScenario, setSelectedScenario] = useState<'conservative' | 'realistic' | 'accelerated'>('realistic');
   const [copiedAll, setCopiedAll] = useState(false);
@@ -652,6 +654,21 @@ Gerado pelo MAPA DE CONTEÚDO (mapadeconteudo.com)
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-zinc-200 dark:border-zinc-800 text-xs font-semibold">
         <button
+          onClick={() => setActiveTab('potencia')}
+          className={`px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
+            activeTab === 'potencia'
+              ? 'bg-gradient-to-r from-[#ee4957] to-[#ff5d6c] text-white shadow-md shadow-[#ee4957]/20 font-bold'
+              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-zinc-900'
+          }`}
+        >
+          <Zap className="w-4 h-4 fill-current text-amber-300" />
+          <span>Prévia de Potência</span>
+          <span className="px-1.5 py-0.5 rounded bg-white/20 text-[9px] font-black uppercase">
+            Raio-X
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('diagnosis')}
           className={`px-4 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
             activeTab === 'diagnosis'
@@ -792,6 +809,20 @@ Gerado pelo MAPA DE CONTEÚDO (mapadeconteudo.com)
             <p>{verifyMessage}</p>
           </div>
         </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB CONTENT: 0. PRÉVIA DE POTÊNCIA (FREE POWER PREVIEW) */}
+      {/* ======================================================== */}
+      {activeTab === 'potencia' && (
+        <PowerPreviewSection
+          report={report}
+          isUnlocked={isUnlocked}
+          onNavigateToCheckout={(planId) => onNavigate('checkout', report.id, planId)}
+          onNavigateToComparison={() => onNavigate('comparison', report.id)}
+          onCopyText={copyToClipboard}
+          copiedId={copiedId}
+        />
       )}
 
       {/* ======================================================== */}

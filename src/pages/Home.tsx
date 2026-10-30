@@ -64,13 +64,13 @@ export const Home: React.FC<HomeProps> = ({
   const [banner, setBanner] = useState('');
 
   const loadingSteps = [
-    'Conectando ao sistema de inteligência e checando perfil...',
-    'Consultando integração oficial da Meta Instagram Business Discovery...',
-    'Avaliando posicionamento, bio, persona e oportunidades do nicho...',
-    'Calculando projeção estatística de seguidores possíveis em 90 dias...',
-    'Gerando 30 ideias estratégicas com Gemini 3.8 Flash...',
-    'Estruturando roteiros de Reels, Carrosséis e Sequências de Stories...',
-    'Montando o cronograma trimestral completo de 90 dias...'
+    'Conectando ao perfil e checando presença no Instagram...',
+    'Consultando dados oficiais da Meta Instagram Business Discovery...',
+    'Escaneando nível de tração e termômetro de potência algorítmica...',
+    'Detectando vazamentos de atenção na bio e pontos de fuga...',
+    'Calculando potencial inexplorado de alcance e novos seguidores em 90 dias...',
+    'Gerando 30 ideias estratégicas, 10 Reels, carrosséis e sequências...',
+    'Montando a Prévia de Potência e o cronograma trimestral completo...'
   ];
 
   useEffect(() => {
@@ -294,7 +294,7 @@ export const Home: React.FC<HomeProps> = ({
                             </span>
                           </div>
                           <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
-                            Plano de 90 dias & projeção de seguidores serão personalizados para este perfil
+                            Prévia de Potência, projeção de seguidores & cronograma sob medida para este perfil
                           </p>
                         </div>
                       </div>
@@ -483,10 +483,14 @@ export const Home: React.FC<HomeProps> = ({
                   type="submit"
                   className="w-full py-4 rounded-xl bg-gradient-to-r from-[#ee4957] to-[#ff5d6c] hover:from-[#d93c4a] hover:to-[#ee4957] text-white font-extrabold text-base tracking-wide flex items-center justify-center gap-2 shadow-xl shadow-[#ee4957]/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                 >
-                  <Sparkles className="w-5 h-5" />
-                  <span>Analisar perfil</span>
+                  <Zap className="w-5 h-5 fill-white text-white" />
+                  <span>Analisar perfil & Gerar Prévia de Potência</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 text-center flex items-center justify-center gap-1.5 pt-1">
+                  <Sparkles className="w-3.5 h-3.5 text-[#ee4957]" />
+                  <span>Prévia de Potência Gratuita com Raio-X de Vazamentos antes de contratar qualquer plano</span>
+                </p>
               </form>
             )}
           </div>
@@ -698,6 +702,30 @@ export const Home: React.FC<HomeProps> = ({
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Banner de Solicitação de Acesso Gratuito */}
+        <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#121217] border border-zinc-200 dark:border-zinc-800 text-center max-w-3xl mx-auto space-y-3.5 shadow-sm">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-[#ee4957]" />
+            <span>Processo de Liberação por Avaliação</span>
+          </div>
+          <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white font-heading">
+            Deseja solicitar uma conta de Acesso Gratuito?
+          </h3>
+          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
+            O acesso gratuito funciona mediante análise prévia do administrador. Envie seu nome e e-mail no formulário público. Após a aprovação, você receberá um convite por e-mail com link seguro de uso único (48h) para criar sua senha e ativar sua conta.
+          </p>
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => onNavigate('solicitar-acesso')}
+              className="px-6 py-3 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white font-bold text-xs uppercase tracking-wider inline-flex items-center gap-2 shadow-lg shadow-[#ee4957]/20 transition-all cursor-pointer"
+            >
+              <span>Solicitar Acesso Gratuito</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </section>
 

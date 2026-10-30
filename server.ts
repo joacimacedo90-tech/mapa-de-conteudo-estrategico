@@ -473,20 +473,136 @@ app.post('/api/reports/:id/claim', (req: Request, res: Response) => {
 });
 
 // ==========================================
+// SOLICITAÇÃO & ATIVAÇÃO DE ACESSO GRATUITO
+// ==========================================
+
+// 1. Solicitar Acesso Gratuito (Público)
+app.post('/api/free-access/request', (req: Request, res: Response) => {
+  try {
+    const { name, email } = req.body;
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'O nome completo é obrigatório.' });
+    }
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ error: 'Um e-mail válido é obrigatório.' });
+    }
+
+    const cleanName = name.trim();
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Check if user already exists
+    const existingUser = db.getUserByEmail(cleanEmail);
+    if (existingUser) {
+      return res.status(400).json({
+        error: 'Este e-mail já possui uma conta cadastrada. Você já pode fazer login diretamente.'
+      });
+    }
+
+    const request = db.createFreeAccessRequest(cleanName, cleanEmail);
+
+    res.json({
+      success: true,
+      message: 'Sua solicitação foi enviada! Aguarde a análise do administrador.',
+      request
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao registrar solicitação';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// 2. Verificar validade do convite de ativação
+app.get('/api/free-access/verify-invite', (req: Request, res: Response) => {
+  const token = String(req.query.token || '').trim();
+  if (!token) {
+    return res.status(400).json({ valid: false, error: 'Token de convite não informado.' });
+  }
+
+  const request = db.getFreeAccessRequestByToken(token);
+  if (!request) {
+    return res.status(404).json({ valid: false, error: 'Convite inválido ou não encontrado no sistema.' });
+  }
+
+  if (request.status !== 'Aprovado') {
+    return res.status(400).json({ valid: false, error: 'Esta solicitação não foi aprovada pelo administrador.' });
+  }
+
+  if (request.inviteUsedAt) {
+    return res.status(400).json({ valid: false, error: 'Este convite já foi utilizado para ativar uma conta.' });
+  }
+
+  if (request.inviteExpiresAt && new Date() > new Date(request.inviteExpiresAt)) {
+    return res.status(400).json({ valid: false, error: 'Este convite expirou (validade de 48 horas excedida). Solicite uma nova liberação.' });
+  }
+
+  res.json({
+    valid: true,
+    name: request.name,
+    email: request.email,
+    expiresAt: request.inviteExpiresAt
+  });
+});
+
+// 3. Ativar conta gratuita através do convite
+app.post('/api/free-access/activate', (req: Request, res: Response) => {
+  try {
+    const { token, password, lgpdConsent } = req.body;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: 'Token de convite obrigatório.' });
+    }
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ error: 'A senha deve ter no mínimo 6 caracteres.' });
+    }
+    if (!lgpdConsent) {
+      return res.status(400).json({ error: 'O consentimento com a LGPD é obrigatório.' });
+    }
+
+    const result = db.activateFreeAccessInvite(token.trim(), password);
+
+    res.json({
+      success: true,
+      message: 'Conta ativada com sucesso! Seu acesso gratuito está liberado.',
+      token: result.user.id,
+      user: result.user
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Falha na ativação da conta';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// ==========================================
 // USER AUTH & MEUS RELATÓRIOS (LGPD COMPLIANT)
 // ==========================================
 
 app.post('/api/auth/register', (req: Request, res: Response) => {
   try {
-    const { email, password, name, lgpdConsent } = req.body;
+    const { email, password, name, lgpdConsent, inviteToken } = req.body;
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios.' });
     }
     if (!lgpdConsent) {
       return res.status(400).json({ error: 'Consentimento de tratamento de dados LGPD é obrigatório.' });
     }
-    const user = db.createUser(email, password, name);
-    res.json({ token: user.id, user });
+
+    // 1. If an invite token is present, activate via invite
+    if (inviteToken) {
+      const result = db.activateFreeAccessInvite(inviteToken, password);
+      return res.json({ token: result.user.id, user: result.user, message: 'Conta ativada com sucesso pelo convite!' });
+    }
+
+    // 2. If the user is a paid customer on Hotmart, allow direct account creation
+    const paidAccess = db.getCustomerAccessByEmail(email);
+    if (paidAccess && paidAccess.status === 'active') {
+      const user = db.createUser(email, password, name);
+      user.activePlanId = paidAccess.planId;
+      return res.json({ token: user.id, user });
+    }
+
+    // 3. Otherwise: Free users cannot register without prior approval
+    return res.status(403).json({
+      error: 'O acesso gratuito funciona exclusivamente por solicitação e aprovação prévia. Envie uma solicitação em "Solicitar Acesso Gratuito".'
+    });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Erro ao cadastrar';
     res.status(400).json({ error: msg });
@@ -767,6 +883,58 @@ app.post('/api/admin/simulate-hotmart-webhook', requireAdmin, async (req: Reques
   res.status(capturedStatus).json({ simulationResult: capturedBody });
 });
 
+// ==========================================
+// ADMIN: SOLICITAÇÕES DE ACESSO GRATUITO
+// ==========================================
+
+// Admin: List all Free Access Requests
+app.get('/api/admin/free-access-requests', requireAdmin, (_req: Request, res: Response) => {
+  const requests = db.getFreeAccessRequests();
+  res.json({ requests });
+});
+
+// Admin: Approve a Free Access Request and generate one-time invite
+app.post('/api/admin/free-access-requests/:id/approve', requireAdmin, (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = db.approveFreeAccessRequest(id);
+
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    const inviteUrl = `${baseUrl}/?page=ativar-conta&token=${result.inviteToken}`;
+
+    // Log the approval and simulated email transmission
+    console.log(`[E-MAIL CONVITE ENVIADO] Para: ${result.request.email} | URL: ${inviteUrl}`);
+
+    res.json({
+      success: true,
+      message: `Solicitação de ${result.request.name} aprovada! Convite gerado e enviado por e-mail com link de uso único válido por 48 horas.`,
+      request: result.request,
+      inviteUrl,
+      inviteToken: result.inviteToken
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao aprovar solicitação';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// Admin: Reject a Free Access Request
+app.post('/api/admin/free-access-requests/:id/reject', requireAdmin, (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const request = db.rejectFreeAccessRequest(id, reason);
+
+    res.json({
+      success: true,
+      message: `Solicitação de ${request.name} recusada.`,
+      request
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao recusar solicitação';
+    res.status(400).json({ error: msg });
+  }
+});
 
 // ==========================================
 // VITE DEV MIDDLEWARE / STATIC FILES

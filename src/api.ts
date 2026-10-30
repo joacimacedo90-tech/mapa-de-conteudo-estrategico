@@ -1,4 +1,4 @@
-import { User, Report, PricingPlan, AdminSettings, WebhookLog, MetaDiscoveryResult } from './types';
+import { User, Report, PricingPlan, AdminSettings, WebhookLog, MetaDiscoveryResult, FreeAccessRequest } from './types';
 
 const TOKEN_KEY = 'mapa_auth_token';
 const ADMIN_TOKEN_KEY = 'mapa_admin_token';
@@ -202,6 +202,71 @@ export const api = {
     return request('/api/admin/simulate-hotmart-webhook', {
       method: 'POST',
       body: JSON.stringify(payload)
+    });
+  },
+
+  // Free Access Flow (Solicitação & Ativação)
+  async requestFreeAccess(payload: { name: string; email: string }): Promise<{
+    success: boolean;
+    message: string;
+    request: FreeAccessRequest;
+  }> {
+    return request('/api/free-access/request', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async verifyFreeAccessInvite(token: string): Promise<{
+    valid: boolean;
+    name?: string;
+    email?: string;
+    expiresAt?: string;
+    message?: string;
+  }> {
+    return request(`/api/free-access/verify-invite?token=${encodeURIComponent(token)}`);
+  },
+
+  async activateFreeAccess(payload: {
+    token: string;
+    password: string;
+    lgpdConsent: boolean;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    token: string;
+    user: User;
+  }> {
+    return request('/api/free-access/activate', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async getAdminFreeAccessRequests(): Promise<{ requests: FreeAccessRequest[] }> {
+    return request('/api/admin/free-access-requests');
+  },
+
+  async adminApproveFreeAccessRequest(id: string): Promise<{
+    success: boolean;
+    message: string;
+    request: FreeAccessRequest;
+    inviteUrl: string;
+    inviteToken: string;
+  }> {
+    return request(`/api/admin/free-access-requests/${id}/approve`, {
+      method: 'POST'
+    });
+  },
+
+  async adminRejectFreeAccessRequest(id: string, reason?: string): Promise<{
+    success: boolean;
+    message: string;
+    request: FreeAccessRequest;
+  }> {
+    return request(`/api/admin/free-access-requests/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason })
     });
   }
 };
