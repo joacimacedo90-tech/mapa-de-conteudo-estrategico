@@ -1,0 +1,6 @@
+{
+  "name": "Mapa de Conteúdo",
+  "description": "Plataforma de análise e planejamento estratégico de 30 dias para Instagram com IA, diagnóstico de posicionamento e integração com Hotmart.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

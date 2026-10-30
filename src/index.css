@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --primary-coral: #ee4957;
+    --primary-coral-hover: #d93c4a;
+    color-scheme: light dark;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  h1, h2, h3, .font-heading {
+    font-family: 'Syne', 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #27272e;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ee4957;
+}
+
+/* Blur backdrop & glowing animations */
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50% { opacity: 0.28; transform: scale(1.05); }
+}
+
+.animate-glow {
+  animation: pulseSlow 6s ease-in-out infinite;
+}
+
+.coral-gradient {
+  background: linear-gradient(135deg, #ee4957 0%, #ff6b78 100%);
+}
+
+.coral-gradient-dark {
+  background: linear-gradient(135deg, rgba(238, 73, 87, 0.15) 0%, rgba(238, 73, 87, 0.02) 100%);
+}

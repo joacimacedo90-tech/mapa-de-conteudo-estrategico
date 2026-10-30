@@ -1,0 +1,117 @@
+{
+  "users": [],
+  "reports": [],
+  "settings": {
+    "adminPasswordConfigured": true,
+    "adminPasswordHash": "0278b086b208ae30c40a8d8cc54cdb33dfe98a6d94f92fc564374b5a0b71a277164f6125ecb3da4731ebd46d3be5a9044c2e5ef13d69231513d1ebc1bae2c3c0",
+    "adminSalt": "5ce36054745b1d79effdae6ca4f4df70",
+    "hotmartWebhookToken": "HOTMART_TOKEN_MAPA_2026",
+    "metaConfigured": false,
+    "metaAccountId": "",
+    "metaToken": "",
+    "plans": [
+      {
+        "id": "essencial",
+        "name": "Plano Essencial",
+        "price": 47,
+        "originalPrice": 97,
+        "installments": "5x de R$ 10,23",
+        "description": "Ideal para quem busca clareza de posicionamento e direção para os primeiros 30 dias.",
+        "features": [
+          "Diagnóstico Completo de Posicionamento & Bio",
+          "Projeção de Crescimento de Seguidores em 90 Dias (3 Cenários)",
+          "Análise de Público-Alvo, Dores Profundas & Desejos",
+          "30 Ideias de Conteúdo Estratégico",
+          "Calendário Estratégico Editorial de 30 Dias (Mês 1)",
+          "Identificação do Diferencial Competitivo Único"
+        ],
+        "hotmartCheckoutUrl": "https://pay.hotmart.com/D108257746C?off=a42sa4ug",
+        "hotmartProductId": "D108257746C",
+        "hotmartOfferCode": "a42sa4ug",
+        "limits": {
+          "calendarDays": 30,
+          "hasDiagnosis": true,
+          "hasGrowthProjection": true,
+          "hasContentIdeas": true,
+          "hasReels": false,
+          "hasCarousels": false,
+          "hasStories": false,
+          "hasHooks": false,
+          "hasExportMarkdown": false,
+          "hasVipBadge": false
+        },
+        "isPopular": false
+      },
+      {
+        "id": "pro",
+        "name": "Plano Estratégico Pro",
+        "badge": "Mais Vendido",
+        "price": 97,
+        "originalPrice": 197,
+        "installments": "10x de R$ 11,28",
+        "description": "Acelerador com roteiros prontos e 60 dias de calendário para crescer e atrair clientes.",
+        "features": [
+          "Tudo do Plano Essencial",
+          "10 Roteiros Prontos de Reels (Ganchos + Quebra + CTA)",
+          "10 Carrosséis Estruturados Slide a Slide",
+          "10 Sequências de Stories de Alta Conversão",
+          "Banco de Ganchos Magnéticos & Modelos de Legenda",
+          "Calendário Estratégico Editorial de 60 Dias (Mês 1 e Mês 2)",
+          "Exportação de Conteúdo em Texto e Markdown"
+        ],
+        "hotmartCheckoutUrl": "https://pay.hotmart.com/D108257746C?off=vp8mrq3g",
+        "hotmartProductId": "D108257746C",
+        "hotmartOfferCode": "vp8mrq3g",
+        "limits": {
+          "calendarDays": 60,
+          "hasDiagnosis": true,
+          "hasGrowthProjection": true,
+          "hasContentIdeas": true,
+          "hasReels": true,
+          "hasCarousels": true,
+          "hasStories": true,
+          "hasHooks": true,
+          "hasExportMarkdown": true,
+          "hasVipBadge": false
+        },
+        "isPopular": true
+      },
+      {
+        "id": "premium",
+        "name": "Plano Premium VIP",
+        "badge": "Acesso Completo",
+        "price": 197,
+        "originalPrice": 397,
+        "installments": "12x de R$ 19,78",
+        "description": "Acesso total e irrestrito: cronograma trimestral completo de 90 dias e suporte prioritário.",
+        "features": [
+          "Tudo do Plano Estratégico Pro",
+          "Calendário Trimestral Completo de 90 Dias (Mês 1, 2 e 3)",
+          "Estratégias de Escala & Conversão para o Mês 3",
+          "Exportação Ilimitada em PDF e Markdown",
+          "Checklist de Otimização de Perfil de Alta Performance",
+          "Selo VIP de Alta Performance & Suporte Prioritário"
+        ],
+        "hotmartCheckoutUrl": "https://pay.hotmart.com/D108257746C?off=4bce8my0",
+        "hotmartProductId": "D108257746C",
+        "hotmartOfferCode": "4bce8my0",
+        "limits": {
+          "calendarDays": 90,
+          "hasDiagnosis": true,
+          "hasGrowthProjection": true,
+          "hasContentIdeas": true,
+          "hasReels": true,
+          "hasCarousels": true,
+          "hasStories": true,
+          "hasHooks": true,
+          "hasExportMarkdown": true,
+          "hasVipBadge": true
+        },
+        "isPopular": false
+      }
+    ],
+    "headlineBanner": "Oferta Especial Hotmart: Desbloqueie sua estratégia nos planos Essencial (R$ 47), Pro (R$ 97) ou Premium (R$ 197)!"
+  },
+  "webhookLogs": [],
+  "customerAccesses": []
+}
