@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR" class="dark" style="color-scheme: dark;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,17 +15,13 @@
     <script>
       (function() {
         try {
-          var saved = localStorage.getItem('mapa_theme');
-          if (saved === 'light') {
-            document.documentElement.classList.remove('dark');
-          } else {
-            document.documentElement.classList.add('dark');
-          }
+          localStorage.setItem('mapa_theme', 'dark');
+          document.documentElement.classList.add('dark');
         } catch (e) {}
       })();
     </script>
   </head>
-  <body class="bg-zinc-50 dark:bg-[#09090b] text-zinc-900 dark:text-zinc-100 antialiased selection:bg-[#ee4957] selection:text-white transition-colors duration-200">
+  <body class="bg-[#09090b] text-zinc-100 antialiased selection:bg-[#ee4957] selection:text-white transition-colors duration-200">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

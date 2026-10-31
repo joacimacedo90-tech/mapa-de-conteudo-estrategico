@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Compass, User as UserIcon, LogOut, Shield, Menu, X, Sparkles } from 'lucide-react';
 import { User } from '../types';
-import { ThemeToggle } from './ThemeToggle';
 
 interface NavbarProps {
   currentUser: User | null;
@@ -122,9 +121,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Action Buttons */}
         <div className="hidden md:flex items-center gap-2.5">
-          {/* Dark / Light Mode Selector */}
-          <ThemeToggle />
-
           {/* Admin shortcut - Exclusively visible to verified logged-in administrator */}
           {isRealAdmin && (
             <button
@@ -185,7 +181,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Mobile menu trigger */}
         <div className="flex md:hidden items-center gap-2">
-          <ThemeToggle />
           {/* Admin shortcut on mobile - Only visible if real administrator */}
           {isRealAdmin && (
             <button

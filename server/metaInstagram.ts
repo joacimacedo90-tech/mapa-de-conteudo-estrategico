@@ -26,7 +26,8 @@ export async function fetchInstagramProfileData(targetUsername: string): Promise
       method: 'GET',
       headers: {
         'Accept': 'application/json'
-      }
+      },
+      signal: AbortSignal.timeout(2000)
     });
 
     const result = await response.json();

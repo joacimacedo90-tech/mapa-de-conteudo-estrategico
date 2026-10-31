@@ -87,7 +87,7 @@ export const Home: React.FC<HomeProps> = ({
     if (isSubmitting) {
       interval = setInterval(() => {
         setLoadingStepIndex((prev) => (prev < loadingSteps.length - 1 ? prev + 1 : prev));
-      }, 3500);
+      }, 900);
     } else {
       setLoadingStepIndex(0);
     }
