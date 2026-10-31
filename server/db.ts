@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { User, Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits, FreeAccessRequest } from '../src/types';
+import { User, Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits, FreeAccessRequest, ClientDiagnostic } from '../src/types';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -17,6 +17,7 @@ interface DatabaseSchema {
   webhookLogs: WebhookLog[];
   customerAccesses?: CustomerAccess[];
   freeAccessRequests?: FreeAccessRequest[];
+  clientDiagnostics?: ClientDiagnostic[];
 }
 
 export const DEFAULT_PLANS: PricingPlan[] = [
@@ -146,6 +147,7 @@ function loadDatabase(): DatabaseSchema {
       if (cache) {
         if (!cache.customerAccesses) cache.customerAccesses = [];
         if (!cache.freeAccessRequests) cache.freeAccessRequests = [];
+        if (!cache.clientDiagnostics) cache.clientDiagnostics = [];
         // Ensure 3 plans are present and properly structured with limits
         if (!cache.settings.plans || cache.settings.plans.length !== 3 || cache.settings.plans.some(p => p.id === 'vip' || !p.limits)) {
           cache.settings.plans = DEFAULT_PLANS;
@@ -176,7 +178,8 @@ function loadDatabase(): DatabaseSchema {
     },
     webhookLogs: [],
     customerAccesses: [],
-    freeAccessRequests: []
+    freeAccessRequests: [],
+    clientDiagnostics: []
   };
 
   saveDatabase(initialData);
@@ -647,6 +650,87 @@ export const db = {
     saveDatabase(data);
     const { passwordHash: _, salt: __, ...safeUser } = existingUser;
     return { user: safeUser, request: req };
+  },
+
+  // Client Strategic Diagnostics (Admin Exclusive)
+  createClientDiagnostic(params: {
+    clientName: string;
+    clientEmail: string;
+    instagramUsername: string;
+    profession?: string;
+    niche?: string;
+    product?: string;
+    objective?: string;
+    reportData: Report;
+  }): ClientDiagnostic {
+    const data = loadDatabase();
+    if (!data.clientDiagnostics) data.clientDiagnostics = [];
+
+    const newDiagnostic: ClientDiagnostic = {
+      id: crypto.randomUUID(),
+      clientName: params.clientName.trim(),
+      clientEmail: params.clientEmail.trim().toLowerCase(),
+      instagramUsername: params.instagramUsername.replace(/^@/, '').trim(),
+      profession: params.profession || '',
+      niche: params.niche || '',
+      product: params.product || '',
+      objective: params.objective || '',
+      createdAt: new Date().toISOString(),
+      status: 'Gerado (Aguardando Envio)',
+      reportData: params.reportData
+    };
+
+    data.clientDiagnostics.unshift(newDiagnostic);
+    saveDatabase(data);
+    return newDiagnostic;
+  },
+
+  getAllClientDiagnostics(): ClientDiagnostic[] {
+    const data = loadDatabase();
+    return data.clientDiagnostics || [];
+  },
+
+  getClientDiagnosticById(id: string): ClientDiagnostic | null {
+    const data = loadDatabase();
+    return (data.clientDiagnostics || []).find((d) => d.id === id) || null;
+  },
+
+  updateClientDiagnosticStatus(
+    id: string,
+    status: 'Gerado (Aguardando Envio)' | 'Enviado por E-mail',
+    emailSendLog?: { attemptedAt: string; success: boolean; error?: string }
+  ): ClientDiagnostic | null {
+    const data = loadDatabase();
+    if (!data.clientDiagnostics) return null;
+
+    const item = data.clientDiagnostics.find((d) => d.id === id);
+    if (!item) return null;
+
+    item.status = status;
+    if (status === 'Enviado por E-mail') {
+      item.sentAt = new Date().toISOString();
+    }
+    if (emailSendLog) {
+      item.emailSendLog = emailSendLog;
+    }
+
+    saveDatabase(data);
+    return item;
+  },
+
+  deleteClientDiagnostic(id: string): boolean {
+    const data = loadDatabase();
+    if (!data.clientDiagnostics) return false;
+
+    const initialLength = data.clientDiagnostics.length;
+    data.clientDiagnostics = data.clientDiagnostics.filter((d) => d.id !== id);
+
+    if (data.clientDiagnostics.length !== initialLength) {
+      saveDatabase(data);
+      return true;
+    }
+    return false;
   }
 };
+
 

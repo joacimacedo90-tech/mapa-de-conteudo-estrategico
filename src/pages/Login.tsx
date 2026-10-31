@@ -8,15 +8,17 @@ interface LoginProps {
   onAdminLoginSuccess: () => void;
   onNavigate: (page: string) => void;
   onOpenLgpd: () => void;
+  initialMode?: 'login' | 'register' | 'admin';
 }
 
 export const Login: React.FC<LoginProps> = ({
   onLoginSuccess,
   onAdminLoginSuccess,
   onNavigate,
-  onOpenLgpd
+  onOpenLgpd,
+  initialMode = 'login'
 }) => {
-  const [mode, setMode] = useState<'login' | 'register' | 'admin'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'admin'>(initialMode);
 
   // Form fields
   const [email, setEmail] = useState('');
@@ -260,30 +262,18 @@ export const Login: React.FC<LoginProps> = ({
           </button>
         </form>
 
-        <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
-          {mode === 'admin' ? (
+        {mode === 'admin' && (
+          <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 text-center">
             <button
               onClick={() => {
-                setMode('login');
-                setError('');
+                onNavigate('home');
               }}
               className="text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
             >
-              ← Voltar ao login de usuários
+              ← Voltar à página inicial
             </button>
-          ) : (
-            <button
-              onClick={() => {
-                setMode('admin');
-                setError('');
-              }}
-              className="text-xs text-zinc-500 hover:text-[#ee4957] flex items-center justify-center gap-1 mx-auto cursor-pointer"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Acesso restrito para administradores</span>
-            </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

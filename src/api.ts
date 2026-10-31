@@ -1,4 +1,4 @@
-import { User, Report, PricingPlan, AdminSettings, WebhookLog, MetaDiscoveryResult, FreeAccessRequest } from './types';
+import { User, Report, PricingPlan, AdminSettings, WebhookLog, MetaDiscoveryResult, FreeAccessRequest, ClientDiagnostic } from './types';
 
 const TOKEN_KEY = 'mapa_auth_token';
 const ADMIN_TOKEN_KEY = 'mapa_admin_token';
@@ -268,6 +268,64 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ reason })
     });
+  },
+
+  // Client Diagnostics (Admin)
+  async adminVerify(): Promise<{ valid: boolean; role: string }> {
+    return request('/api/admin/verify');
+  },
+
+  async adminGetEmailStatus(): Promise<{
+    configured: boolean;
+    missing: string[];
+    smtpHost: string | null;
+    smtpUser: string | null;
+    smtpFrom: string | null;
+  }> {
+    return request('/api/admin/email-status');
+  },
+
+  async getAdminClientDiagnostics(): Promise<{ diagnostics: ClientDiagnostic[] }> {
+    return request('/api/admin/client-diagnostics');
+  },
+
+  async adminGenerateClientDiagnostic(payload: {
+    clientName: string;
+    clientEmail: string;
+    instagramUsername: string;
+    profession?: string;
+    niche?: string;
+    product?: string;
+    objective?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    diagnostic: ClientDiagnostic;
+  }> {
+    return request('/api/admin/client-diagnostics/generate', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async adminSendClientDiagnosticEmail(id: string): Promise<{
+    success: boolean;
+    message: string;
+    diagnostic?: ClientDiagnostic;
+  }> {
+    return request(`/api/admin/client-diagnostics/${id}/send-email`, {
+      method: 'POST'
+    });
+  },
+
+  async adminDeleteClientDiagnostic(id: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    return request(`/api/admin/client-diagnostics/${id}`, {
+      method: 'DELETE'
+    });
   }
 };
+
 

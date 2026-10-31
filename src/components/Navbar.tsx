@@ -19,6 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   isAdminLoggedIn
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isRealAdmin = Boolean(isAdminLoggedIn || currentUser?.role === 'admin');
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-[#09090b]/85 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800/80 transition-colors duration-200">
@@ -124,18 +125,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Dark / Light Mode Selector */}
           <ThemeToggle />
 
-          {/* Admin shortcut */}
-          <button
-            onClick={() => onNavigate('admin')}
-            title="Painel de Administração"
-            className={`p-2 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-              isAdminLoggedIn || currentPage === 'admin'
-                ? 'bg-[#ee4957]/15 border-[#ee4957]/40 text-[#ee4957]'
-                : 'bg-zinc-100 hover:bg-zinc-200 border-zinc-200 text-zinc-600 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-white'
-            }`}
-          >
-            <Shield className="w-4 h-4" />
-          </button>
+          {/* Admin shortcut - Exclusively visible to verified logged-in administrator */}
+          {isRealAdmin && (
+            <button
+              onClick={() => onNavigate('admin')}
+              title="Painel de Administração"
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                currentPage === 'admin'
+                  ? 'bg-[#ee4957] text-white border-[#ee4957] shadow-sm'
+                  : 'bg-[#ee4957]/15 border-[#ee4957]/40 text-[#ee4957] hover:bg-[#ee4957]/25'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Painel Admin</span>
+            </button>
+          )}
 
           {currentUser ? (
             <div className="flex items-center gap-2.5 pl-2 border-l border-zinc-200 dark:border-zinc-800">
@@ -182,12 +186,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Mobile menu trigger */}
         <div className="flex md:hidden items-center gap-2">
           <ThemeToggle />
-          <button
-            onClick={() => onNavigate('admin')}
-            className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-800"
-          >
-            <Shield className="w-4 h-4" />
-          </button>
+          {/* Admin shortcut on mobile - Only visible if real administrator */}
+          {isRealAdmin && (
+            <button
+              onClick={() => onNavigate('admin')}
+              className="p-2 rounded-lg bg-[#ee4957]/15 border border-[#ee4957]/40 text-[#ee4957]"
+              title="Painel Admin"
+            >
+              <Shield className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white border border-zinc-200 dark:border-zinc-800"
@@ -241,15 +249,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             Meus Relatórios
           </button>
 
-          <button
-            onClick={() => {
-              onNavigate('admin');
-              setMobileMenuOpen(false);
-            }}
-            className="w-full text-left px-3 py-2 text-sm text-[#ee4957] font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg"
-          >
-            Painel Administrativo
-          </button>
+          {/* Admin link inside mobile drawer - Only rendered for real administrator */}
+          {isRealAdmin && (
+            <button
+              onClick={() => {
+                onNavigate('admin');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 text-sm text-[#ee4957] font-bold hover:bg-[#ee4957]/10 rounded-lg flex items-center gap-2"
+            >
+              <Shield className="w-4 h-4 text-[#ee4957]" />
+              <span>Painel Administrativo</span>
+            </button>
+          )}
           <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
             {currentUser ? (
               <div className="flex items-center justify-between px-3 py-2">

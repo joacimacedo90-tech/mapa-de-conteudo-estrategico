@@ -284,3 +284,24 @@ export interface FreeAccessRequest {
   inviteUsedAt?: string;
 }
 
+export interface ClientDiagnostic {
+  id: string;
+  clientName: string;
+  clientEmail: string;
+  instagramUsername: string;
+  profession?: string;
+  niche?: string;
+  product?: string;
+  objective?: string;
+  createdAt: string;
+  sentAt?: string;
+  status: 'Gerado (Aguardando Envio)' | 'Enviado por E-mail';
+  reportData: Report;
+  emailSendLog?: {
+    attemptedAt: string;
+    success: boolean;
+    error?: string;
+  };
+}
+
+

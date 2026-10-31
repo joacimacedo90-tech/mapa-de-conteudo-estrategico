@@ -6,7 +6,8 @@ import { db } from './server/db';
 import { fetchInstagramProfileData } from './server/metaInstagram';
 import { generateContentMapStrategy } from './server/gemini';
 import { handleHotmartWebhook } from './server/hotmart';
-import { Report, CalendarDay } from './src/types';
+import { sendClientDiagnosticEmail, isEmailConfigured } from './server/email';
+import { Report, CalendarDay, ClientDiagnostic } from './src/types';
 
 dotenv.config();
 
@@ -934,6 +935,181 @@ app.post('/api/admin/free-access-requests/:id/reject', requireAdmin, (req: Reque
     const msg = err instanceof Error ? err.message : 'Erro ao recusar solicitação';
     res.status(400).json({ error: msg });
   }
+});
+
+// ==========================================
+// ADMIN: GERAR DIAGNÓSTICO PARA CLIENTE
+// ==========================================
+
+// Verify active admin session
+app.get('/api/admin/verify', requireAdmin, (_req: Request, res: Response) => {
+  res.json({ valid: true, role: 'admin' });
+});
+
+// Check email service status
+app.get('/api/admin/email-status', requireAdmin, (_req: Request, res: Response) => {
+  const check = isEmailConfigured();
+  res.json({
+    configured: check.configured,
+    missing: check.missing,
+    smtpHost: process.env.SMTP_HOST || null,
+    smtpUser: process.env.SMTP_USER || null,
+    smtpFrom: process.env.SMTP_FROM || null
+  });
+});
+
+// Admin: List all client diagnostics
+app.get('/api/admin/client-diagnostics', requireAdmin, (_req: Request, res: Response) => {
+  const diagnostics = db.getAllClientDiagnostics();
+  res.json({ diagnostics });
+});
+
+// Admin: Generate strategic diagnostic for client
+app.post('/api/admin/client-diagnostics/generate', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const {
+      clientName,
+      clientEmail,
+      instagramUsername,
+      profession,
+      niche,
+      product,
+      objective
+    } = req.body;
+
+    if (!clientName || typeof clientName !== 'string' || !clientName.trim()) {
+      return res.status(400).json({ error: 'O nome do cliente é obrigatório.' });
+    }
+    if (!clientEmail || typeof clientEmail !== 'string' || !clientEmail.trim() || !clientEmail.includes('@')) {
+      return res.status(400).json({ error: 'O e-mail do cliente é obrigatório e deve ser um endereço válido.' });
+    }
+    if (!instagramUsername || typeof instagramUsername !== 'string' || !instagramUsername.trim()) {
+      return res.status(400).json({ error: 'O @ do Instagram é obrigatório.' });
+    }
+
+    const cleanUsername = instagramUsername.replace(/^@/, '').trim();
+
+    // 1. Check Meta Instagram Business Discovery
+    const metaCheck = await fetchInstagramProfileData(cleanUsername);
+
+    // 2. Call Gemini server-side using existing generateContentMapStrategy
+    const strategy = await generateContentMapStrategy({
+      username: cleanUsername,
+      profession: profession?.trim() || 'Não informado',
+      niche: niche?.trim() || 'Geral do segmento',
+      product: product?.trim() || 'Produtos/Serviços',
+      objective: objective?.trim() || 'Atrair seguidores compradores e aumentar autoridade',
+      metaProfileData: metaCheck.data
+    });
+
+    // 3. Assemble complete unlocked report
+    const rawReport: Report = {
+      id: crypto.randomUUID(),
+      userId: null,
+      userEmail: clientEmail.trim().toLowerCase(),
+      username: cleanUsername,
+      profession: profession?.trim() || '',
+      niche: niche?.trim() || '',
+      product: product?.trim() || '',
+      objective: objective?.trim() || 'Atrair seguidores compradores e aumentar autoridade',
+      metaApiStatus: metaCheck.status === 'connected' ? 'connected' : 'not_configured',
+      manualData: {
+        bio: metaCheck.data?.biography || '',
+        recentCaptions: metaCheck.data?.recentCaptions?.join('\n') || ''
+      },
+      metaProfileData: metaCheck.data,
+      diagnosis: strategy.diagnosis,
+      contentIdeas: strategy.contentIdeas,
+      reels: strategy.reels,
+      carousels: strategy.carousels,
+      stories: strategy.stories,
+      hooksAndCtas: strategy.hooksAndCtas,
+      calendar: strategy.calendar,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      isPaid: true,
+      paidAt: new Date().toISOString(),
+      paidPlanId: 'premium',
+      hotmartTransactionId: `ADMIN_DIAG_${Date.now()}`
+    };
+
+    const fullReport = ensureReport90Days(rawReport);
+
+    // Save client diagnostic in database
+    const diagnostic = db.createClientDiagnostic({
+      clientName: clientName.trim(),
+      clientEmail: clientEmail.trim().toLowerCase(),
+      instagramUsername: cleanUsername,
+      profession: profession?.trim() || '',
+      niche: niche?.trim() || '',
+      product: product?.trim() || '',
+      objective: objective?.trim() || 'Atrair seguidores compradores e aumentar autoridade',
+      reportData: fullReport
+    });
+
+    // Note: Do NOT send email automatically. A separate button "Enviar Diagnóstico por E-mail" triggers delivery.
+    res.json({
+      success: true,
+      message: 'Diagnóstico estratégico para o cliente gerado com sucesso! Visualize a prévia e clique em "Enviar Diagnóstico por E-mail" quando desejar.',
+      diagnostic
+    });
+  } catch (err: unknown) {
+    console.error('Error generating client diagnostic:', err);
+    const message = err instanceof Error ? err.message : 'Falha interna ao gerar diagnóstico estratégico para cliente.';
+    res.status(500).json({ error: message });
+  }
+});
+
+// Admin: Send generated diagnostic by email
+app.post('/api/admin/client-diagnostics/:id/send-email', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const diagnostic = db.getClientDiagnosticById(id);
+    if (!diagnostic) {
+      return res.status(404).json({ error: 'Diagnóstico não encontrado no histórico.' });
+    }
+
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    const result = await sendClientDiagnosticEmail(diagnostic, baseUrl);
+
+    if (result.success) {
+      const updated = db.updateClientDiagnosticStatus(id, 'Enviado por E-mail', {
+        attemptedAt: new Date().toISOString(),
+        success: true
+      });
+      return res.json({
+        success: true,
+        message: result.message,
+        diagnostic: updated
+      });
+    } else {
+      db.updateClientDiagnosticStatus(id, diagnostic.status, {
+        attemptedAt: new Date().toISOString(),
+        success: false,
+        error: result.message
+      });
+      return res.status(400).json({
+        success: false,
+        configured: result.configured,
+        missingConfig: result.missingConfig,
+        error: result.message
+      });
+    }
+  } catch (err: unknown) {
+    console.error('Error sending client diagnostic email:', err);
+    const message = err instanceof Error ? err.message : 'Erro ao processar envio de e-mail.';
+    res.status(500).json({ error: message });
+  }
+});
+
+// Admin: Delete a client diagnostic from history
+app.delete('/api/admin/client-diagnostics/:id', requireAdmin, (req: Request, res: Response) => {
+  const { id } = req.params;
+  const deleted = db.deleteClientDiagnostic(id);
+  if (!deleted) {
+    return res.status(404).json({ error: 'Diagnóstico não encontrado.' });
+  }
+  res.json({ success: true, message: 'Diagnóstico removido do histórico com sucesso.' });
 });
 
 // ==========================================

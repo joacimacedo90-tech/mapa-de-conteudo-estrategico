@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Shield } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { LgpdModal } from './components/LgpdModal';
@@ -35,6 +36,19 @@ export default function App() {
         })
         .catch(() => {
           setAuthToken(null);
+        });
+    }
+
+    // Verify stored admin session with backend
+    const aToken = getAdminToken();
+    if (aToken) {
+      api.adminVerify()
+        .then(() => {
+          setIsAdminLoggedIn(true);
+        })
+        .catch(() => {
+          setAdminToken(null);
+          setIsAdminLoggedIn(false);
         });
     }
 
@@ -189,13 +203,34 @@ export default function App() {
           )}
 
           {currentPage === 'admin' && (
-            isAdminLoggedIn ? (
+            currentUser && currentUser.role !== 'admin' ? (
+              <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-red-100 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto">
+                  <Shield className="w-7 h-7" />
+                </div>
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-white font-heading">
+                  Acesso Restrito ao Administrador
+                </h2>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  Esta área é exclusiva para a administração da plataforma. Sua conta conectada (cliente) não possui privilégios administrativos.
+                </p>
+                <div className="pt-2">
+                  <button
+                    onClick={() => navigateTo('my-reports')}
+                    className="px-5 py-2.5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+                  >
+                    Voltar para Meus Relatórios
+                  </button>
+                </div>
+              </div>
+            ) : isAdminLoggedIn ? (
               <Admin
                 onLogoutAdmin={handleLogoutAdmin}
                 onNavigate={navigateTo}
               />
             ) : (
               <Login
+                initialMode="admin"
                 onLoginSuccess={(user) => setCurrentUser(user)}
                 onAdminLoginSuccess={() => {
                   setIsAdminLoggedIn(true);

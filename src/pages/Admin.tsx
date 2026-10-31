@@ -28,10 +28,17 @@ import {
   UserX,
   Clock,
   Send,
-  MailCheck
+  MailCheck,
+  FileDown,
+  Eye,
+  Mail,
+  Instagram,
+  TrendingUp,
+  Download
 } from 'lucide-react';
 import { api } from '../api';
-import { Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits, FreeAccessRequest } from '../types';
+import { Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits, FreeAccessRequest, ClientDiagnostic } from '../types';
+import { exportDiagnosticToPdf } from '../utils/exportPdf';
 
 interface AdminProps {
   onLogoutAdmin: () => void;
@@ -39,7 +46,7 @@ interface AdminProps {
 }
 
 export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
-  const [tab, setTab] = useState<'reports' | 'plans' | 'settings' | 'webhooks' | 'accesses' | 'free-access'>('reports');
+  const [tab, setTab] = useState<'reports' | 'client-diagnostics' | 'free-access' | 'plans' | 'accesses' | 'webhooks' | 'settings'>('reports');
 
   // Data states
   const [reports, setReports] = useState<Report[]>([]);
@@ -47,6 +54,22 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
   const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
   const [customerAccesses, setCustomerAccesses] = useState<CustomerAccess[]>([]);
   const [freeAccessRequests, setFreeAccessRequests] = useState<FreeAccessRequest[]>([]);
+  const [clientDiagnostics, setClientDiagnostics] = useState<ClientDiagnostic[]>([]);
+  const [emailStatus, setEmailStatus] = useState<{ configured: boolean; missing: string[]; smtpHost: string | null; smtpUser: string | null; smtpFrom: string | null } | null>(null);
+
+  // Client Diagnostic Form States with default editable examples
+  const [diagClientName, setDiagClientName] = useState('Maria Silva');
+  const [diagClientEmail, setDiagClientEmail] = useState('maria@email.com');
+  const [diagInstagram, setDiagInstagram] = useState('@mariasilva');
+  const [diagProfession, setDiagProfession] = useState('Consultora de Imagem & Estilo');
+  const [diagNiche, setDiagNiche] = useState('Moda Executiva & Elegância');
+  const [diagProduct, setDiagProduct] = useState('Mentoria e Consultoria de Imagem');
+  const [diagObjective, setDiagObjective] = useState('Atrair seguidores compradores e fechar contratos de alto valor');
+
+  // Diagnostic Action States
+  const [generatingDiagnostic, setGeneratingDiagnostic] = useState(false);
+  const [selectedDiagnosticForPreview, setSelectedDiagnosticForPreview] = useState<ClientDiagnostic | null>(null);
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,12 +109,14 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [reportsRes, settingsRes, webhooksRes, accessesRes, freeRes] = await Promise.all([
+      const [reportsRes, settingsRes, webhooksRes, accessesRes, freeRes, diagRes, emailRes] = await Promise.all([
         api.getAdminReports(),
         api.getAdminSettings(),
         api.getAdminWebhooks(),
         api.getAdminCustomerAccesses().catch(() => ({ accesses: [] })),
-        api.getAdminFreeAccessRequests().catch(() => ({ requests: [] }))
+        api.getAdminFreeAccessRequests().catch(() => ({ requests: [] })),
+        api.getAdminClientDiagnostics().catch(() => ({ diagnostics: [] })),
+        api.adminGetEmailStatus().catch(() => null)
       ]);
 
       setReports(reportsRes.reports);
@@ -103,11 +128,98 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
       setWebhookLogs(webhooksRes.logs);
       setCustomerAccesses(accessesRes.accesses || []);
       setFreeAccessRequests(freeRes.requests || []);
+      setClientDiagnostics(diagRes.diagnostics || []);
+      if (emailRes) setEmailStatus(emailRes);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Falha ao carregar dados administrativos';
       setNotice({ type: 'error', text: msg });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Generate Strategic Diagnostic for Client (Does NOT send email automatically)
+  const handleGenerateClientDiagnostic = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!diagClientName.trim()) {
+      showNotification('Informe o nome do cliente.', 'error');
+      return;
+    }
+    if (!diagClientEmail.trim() || !diagClientEmail.includes('@')) {
+      showNotification('Informe um e-mail válido para o cliente.', 'error');
+      return;
+    }
+    if (!diagInstagram.trim()) {
+      showNotification('Informe o Instagram (@) do cliente.', 'error');
+      return;
+    }
+
+    try {
+      setGeneratingDiagnostic(true);
+      const res = await api.adminGenerateClientDiagnostic({
+        clientName: diagClientName.trim(),
+        clientEmail: diagClientEmail.trim(),
+        instagramUsername: diagInstagram.trim(),
+        profession: diagProfession.trim(),
+        niche: diagNiche.trim(),
+        product: diagProduct.trim(),
+        objective: diagObjective.trim()
+      });
+
+      showNotification('Diagnóstico estratégico gerado com sucesso! Confira a prévia completa abaixo antes do envio.');
+      setSelectedDiagnosticForPreview(res.diagnostic);
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao gerar diagnóstico para cliente.';
+      showNotification(msg, 'error');
+    } finally {
+      setGeneratingDiagnostic(false);
+    }
+  };
+
+  // Send Diagnostic Email
+  const handleSendDiagnosticEmail = async (id: string) => {
+    try {
+      setSendingEmailId(id);
+      const res = await api.adminSendClientDiagnosticEmail(id);
+      showNotification(res.message);
+      if (selectedDiagnosticForPreview && selectedDiagnosticForPreview.id === id && res.diagnostic) {
+        setSelectedDiagnosticForPreview(res.diagnostic);
+      }
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha no envio do e-mail.';
+      showNotification(msg, 'error');
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
+
+  // Export PDF
+  const handleExportPdf = (diag: ClientDiagnostic) => {
+    try {
+      exportDiagnosticToPdf(diag);
+      showNotification(`PDF executivo de @${diag.instagramUsername} gerado e baixado com sucesso!`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao gerar PDF.';
+      showNotification(msg, 'error');
+    }
+  };
+
+  // Delete Diagnostic
+  const handleDeleteDiagnostic = async (id: string, name: string) => {
+    if (!window.confirm(`Tem certeza que deseja excluir o diagnóstico estratégico de ${name}?`)) return;
+    try {
+      await api.adminDeleteClientDiagnostic(id);
+      showNotification('Diagnóstico removido com sucesso.');
+      if (selectedDiagnosticForPreview?.id === id) {
+        setSelectedDiagnosticForPreview(null);
+      }
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao excluir.';
+      showNotification(msg, 'error');
     }
   };
 
@@ -406,6 +518,18 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
         </button>
 
         <button
+          onClick={() => setTab('client-diagnostics')}
+          className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+            tab === 'client-diagnostics'
+              ? 'bg-[#ee4957] text-white font-bold shadow-sm'
+              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Gerar Diagnóstico para Cliente ({clientDiagnostics.length})</span>
+        </button>
+
+        <button
           onClick={() => setTab('plans')}
           className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
             tab === 'plans'
@@ -577,6 +701,469 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================== */}
+      {/* TAB: GERAR DIAGNÓSTICO PARA CLIENTE                 */}
+      {/* =================================================== */}
+      {tab === 'client-diagnostics' && (
+        <div className="space-y-8">
+          {/* Header & Status Card */}
+          <div className="bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ee4957]/10 text-[#ee4957] text-xs font-bold mb-2">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Exclusivo para o Administrador</span>
+                </div>
+                <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white font-heading">
+                  Gerar Diagnóstico Estratégico para Cliente
+                </h3>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-2xl mt-1 leading-relaxed">
+                  Preencha os dados do cliente para produzir uma análise completa de posicionamento no Instagram com o motor de inteligência artificial Gemini. Você poderá revisar a prévia estratégica completa, exportar um PDF executivo e enviar por e-mail quando desejar.
+                </p>
+              </div>
+
+              {/* Email service status badge */}
+              <div className="shrink-0 p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs space-y-1">
+                <div className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Serviço de E-mail (SMTP)</div>
+                {emailStatus?.configured ? (
+                  <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Conectado ({emailStatus.smtpHost})</span>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Integração Pronta (Pendente .env)</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 max-w-[200px] leading-tight">
+                      Defina SMTP_HOST, SMTP_USER e SMTP_PASS no .env para envio automático. O PDF funciona sem restrições.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Form: Gerar Diagnóstico para Cliente */}
+          <div className="bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
+            <div className="border-b border-zinc-200 dark:border-zinc-800 pb-4">
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-white font-heading flex items-center gap-2">
+                <UserCheck className="w-4 h-4 text-[#ee4957]" />
+                <span>Formulário do Interessado</span>
+              </h4>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Os dados abaixo vêm com exemplos preenchidos como solicitado, mas você pode editá-los livremente antes de gerar.
+              </p>
+            </div>
+
+            <form onSubmit={handleGenerateClientDiagnostic} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-800 dark:text-zinc-200 mb-1.5">
+                    Nome do cliente <span className="text-[#ee4957]">*</span>
+                  </label>
+                  <div className="relative">
+                    <Users className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3" />
+                    <input
+                      type="text"
+                      required
+                      value={diagClientName}
+                      onChange={(e) => setDiagClientName(e.target.value)}
+                      placeholder="Ex: Maria Silva"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#ee4957]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-800 dark:text-zinc-200 mb-1.5">
+                    E-mail <span className="text-[#ee4957]">*</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3" />
+                    <input
+                      type="email"
+                      required
+                      value={diagClientEmail}
+                      onChange={(e) => setDiagClientEmail(e.target.value)}
+                      placeholder="Ex: maria@email.com"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#ee4957]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-800 dark:text-zinc-200 mb-1.5">
+                    Instagram (@) <span className="text-[#ee4957]">*</span>
+                  </label>
+                  <div className="relative">
+                    <Instagram className="w-4 h-4 text-[#ee4957] absolute left-3.5 top-3" />
+                    <input
+                      type="text"
+                      required
+                      value={diagInstagram}
+                      onChange={(e) => setDiagInstagram(e.target.value)}
+                      placeholder="Ex: @mariasilva"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#ee4957]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações complementares opcionais */}
+              <div className="p-4 rounded-xl bg-zinc-50/70 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800/80 space-y-3">
+                <span className="text-[11px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block">
+                  Informações Estratégicas Complementares (Opcional - Refina a IA):
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-[11px] text-zinc-600 dark:text-zinc-400 mb-1">Profissão / Segmento</label>
+                    <input
+                      type="text"
+                      value={diagProfession}
+                      onChange={(e) => setDiagProfession(e.target.value)}
+                      placeholder="Ex: Consultora de Imagem & Estilo"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#ee4957]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-zinc-600 dark:text-zinc-400 mb-1">Nicho Específico</label>
+                    <input
+                      type="text"
+                      value={diagNiche}
+                      onChange={(e) => setDiagNiche(e.target.value)}
+                      placeholder="Ex: Moda Executiva e Elegância Feminina"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#ee4957]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-zinc-600 dark:text-zinc-400 mb-1">Serviço / Produto Principal</label>
+                    <input
+                      type="text"
+                      value={diagProduct}
+                      onChange={(e) => setDiagProduct(e.target.value)}
+                      placeholder="Ex: Mentoria de Posicionamento e Imagem"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#ee4957]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-zinc-600 dark:text-zinc-400 mb-1">Objetivo Comercial Principal</label>
+                    <input
+                      type="text"
+                      value={diagObjective}
+                      onChange={(e) => setDiagObjective(e.target.value)}
+                      placeholder="Ex: Atrair seguidores compradores e fechar contratos"
+                      className="w-full px-3 py-2 rounded-lg bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white focus:outline-none focus:border-[#ee4957]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <button
+                  type="submit"
+                  disabled={generatingDiagnostic}
+                  className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#ee4957] to-[#ff5d6c] hover:from-[#d93c4a] hover:to-[#ee4957] text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#ee4957]/20 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {generatingDiagnostic ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Gerando Diagnóstico Estratégico com IA...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Gerar Diagnóstico para Cliente</span>
+                    </>
+                  )}
+                </button>
+
+                <p className="text-[11px] text-zinc-500 italic max-w-sm">
+                  ✓ Não envia nada automaticamente. Você poderá avaliar a prévia antes de enviar por e-mail ou exportar em PDF.
+                </p>
+              </div>
+            </form>
+          </div>
+
+          {/* Section: Prévia do Diagnóstico (Exibida ao gerar ou ao clicar em Ver Prévia) */}
+          {selectedDiagnosticForPreview && (
+            <div className="bg-white dark:bg-[#121216] border-2 border-[#ee4957]/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl relative animate-in fade-in duration-300">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#ee4957] text-white">
+                      Prévia do Diagnóstico
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                      Gerado em {new Date(selectedDiagnosticForPreview.createdAt).toLocaleString('pt-BR')}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-black text-zinc-900 dark:text-white font-heading">
+                    {selectedDiagnosticForPreview.clientName} • @{selectedDiagnosticForPreview.instagramUsername}
+                  </h3>
+                  <p className="text-xs text-zinc-500">
+                    E-mail do cliente: <strong className="text-zinc-800 dark:text-zinc-200">{selectedDiagnosticForPreview.clientEmail}</strong>
+                  </p>
+                </div>
+
+                {/* Actions: Export PDF & Send Email */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handleExportPdf(selectedDiagnosticForPreview)}
+                    className="px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+                  >
+                    <FileDown className="w-4 h-4 text-[#ee4957]" />
+                    <span>Exportar Diagnóstico para PDF</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={sendingEmailId === selectedDiagnosticForPreview.id}
+                    onClick={() => handleSendDiagnosticEmail(selectedDiagnosticForPreview.id)}
+                    className="px-4 py-2.5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-[#ee4957]/20 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {sendingEmailId === selectedDiagnosticForPreview.id ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Disparando E-mail...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4" />
+                        <span>Enviar Diagnóstico por E-mail</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDiagnosticForPreview(null)}
+                    className="p-2 rounded-xl text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    title="Fechar Prévia"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Status and summary alert */}
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-zinc-600 dark:text-zinc-400">Status atual:</span>
+                  {selectedDiagnosticForPreview.status === 'Enviado por E-mail' ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Enviado por E-mail em {selectedDiagnosticForPreview.sentAt ? new Date(selectedDiagnosticForPreview.sentAt).toLocaleString('pt-BR') : ''}</span>
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-400 border border-amber-300 dark:border-amber-800 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>Gerado (Aguardando Envio)</span>
+                    </span>
+                  )}
+                </div>
+
+                <span className="text-[11px] text-zinc-500 font-mono">
+                  ID: {selectedDiagnosticForPreview.id.slice(0, 8)}...
+                </span>
+              </div>
+
+              {/* Preview Content Blocks */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-zinc-500">Potência Algorítmica</span>
+                  <div className="text-2xl font-black text-[#ee4957] font-heading">
+                    {selectedDiagnosticForPreview.reportData.diagnosis?.powerPreview?.currentPowerScore || selectedDiagnosticForPreview.reportData.diagnosis?.overallScore || 85} / 100
+                  </div>
+                  <p className="text-[11px] text-zinc-500">Tração calculada pelo motor do Instagram</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-zinc-500">Projeção 90 Dias (Realista)</span>
+                  <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 font-heading">
+                    {selectedDiagnosticForPreview.reportData.diagnosis?.growthProjection?.realistic?.projectedFollowersRange || '+3.500 a +7.500'}
+                  </div>
+                  <p className="text-[11px] text-zinc-500">
+                    Alcance: {selectedDiagnosticForPreview.reportData.diagnosis?.growthProjection?.realistic?.estimatedReachRange || '80k a 180k'}
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-zinc-500">Conversão de Leads Estimada</span>
+                  <div className="text-lg font-black text-sky-600 dark:text-sky-400 font-heading">
+                    {selectedDiagnosticForPreview.reportData.diagnosis?.growthProjection?.realistic?.estimatedDmMessages || '80 a 160 na DM'}
+                  </div>
+                  <p className="text-[11px] text-zinc-500">Contatos qualificados via direct</p>
+                </div>
+              </div>
+
+              {/* Detailed Strategic Blocks */}
+              <div className="space-y-4 text-xs">
+                <div className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-2">
+                  <h5 className="font-bold text-zinc-900 dark:text-white uppercase tracking-wider text-[11px]">
+                    Diagnóstico de Posicionamento Atual & Pontos de Atenção:
+                  </h5>
+                  <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                    {selectedDiagnosticForPreview.reportData.diagnosis?.bioAnalysis?.currentStatus || 'Estratégia de posicionamento personalizada para o perfil.'}
+                  </p>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-2">
+                  <h5 className="font-bold text-[#ee4957] uppercase tracking-wider text-[11px]">
+                    Proposta Única de Valor (Diferencial Competitivo):
+                  </h5>
+                  <p className="text-zinc-600 dark:text-zinc-300 leading-relaxed">
+                    {selectedDiagnosticForPreview.reportData.diagnosis?.competitiveEdge || 'Comunicação direta com o público qualificado.'}
+                  </p>
+                </div>
+
+                {/* Content ideas snippet */}
+                <div className="p-5 rounded-2xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 space-y-3">
+                  <h5 className="font-bold text-zinc-900 dark:text-white uppercase tracking-wider text-[11px]">
+                    Amostra de Ideias Estratégicas & Roteiros de Reels Prontos:
+                  </h5>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {selectedDiagnosticForPreview.reportData.contentIdeas?.slice(0, 4).map((idea, idx) => (
+                      <div key={idx} className="p-3 rounded-xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 space-y-1">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#ee4957]/10 text-[#ee4957]">
+                          {idea.format}
+                        </span>
+                        <div className="font-bold text-zinc-900 dark:text-white mt-1">{idea.title}</div>
+                        <div className="text-[11px] text-zinc-500 italic">Gancho: "{idea.hook}"</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Section: Histórico Administrativo de Diagnósticos */}
+          <div className="bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+            <div className="p-4 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-bold text-zinc-900 dark:text-white font-heading">
+                  Histórico de Diagnósticos Gerados para Clientes
+                </h4>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Consulte todos os diagnósticos gerados pela administração, monitore o status de envio por e-mail e baixe em PDF a qualquer momento.
+                </p>
+              </div>
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400">
+                {clientDiagnostics.length} registrados
+              </span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-zinc-100 dark:bg-zinc-900/90 text-zinc-700 dark:text-zinc-400 font-semibold uppercase text-[10px] tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                  <tr>
+                    <th className="py-3 px-4">Cliente</th>
+                    <th className="py-3 px-4">Instagram</th>
+                    <th className="py-3 px-4">Data de Geração</th>
+                    <th className="py-3 px-4">Status de Envio</th>
+                    <th className="py-3 px-4 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/80">
+                  {clientDiagnostics.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-10 text-center text-zinc-400 dark:text-zinc-500">
+                        Nenhum diagnóstico para cliente gerado ainda. Use o formulário acima para produzir o primeiro relatório.
+                      </td>
+                    </tr>
+                  ) : (
+                    clientDiagnostics.map((diag) => (
+                      <tr key={diag.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/40 transition-colors">
+                        <td className="py-3.5 px-4 font-bold text-zinc-900 dark:text-white">
+                          {diag.clientName}
+                          <div className="text-[11px] text-zinc-500 font-normal">{diag.clientEmail}</div>
+                        </td>
+
+                        <td className="py-3.5 px-4 font-bold text-[#ee4957]">
+                          @{diag.instagramUsername}
+                          {diag.niche && <div className="text-[10px] text-zinc-500 font-normal">{diag.niche}</div>}
+                        </td>
+
+                        <td className="py-3.5 px-4 text-zinc-500 whitespace-nowrap">
+                          {new Date(diag.createdAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                        </td>
+
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {diag.status === 'Enviado por E-mail' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Enviado ({diag.sentAt ? new Date(diag.sentAt).toLocaleDateString('pt-BR') : ''})</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+                              <Clock className="w-3 h-3" />
+                              <span>Aguardando Envio</span>
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedDiagnosticForPreview(diag);
+                                window.scrollTo({ top: 350, behavior: 'smooth' });
+                              }}
+                              title="Ver Prévia Completa"
+                              className="px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-[#ee4957]" />
+                              <span>Prévia</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleExportPdf(diag)}
+                              title="Baixar em PDF"
+                              className="px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <FileDown className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-300" />
+                              <span>PDF</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={sendingEmailId === diag.id}
+                              onClick={() => handleSendDiagnosticEmail(diag.id)}
+                              title="Enviar por E-mail"
+                              className="px-2.5 py-1.5 rounded-lg bg-[#ee4957]/15 hover:bg-[#ee4957]/25 text-[#ee4957] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                            >
+                              <Mail className="w-3.5 h-3.5" />
+                              <span>{sendingEmailId === diag.id ? 'Enviando...' : 'E-mail'}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDiagnostic(diag.id, diag.clientName)}
+                              title="Excluir Diagnóstico"
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
