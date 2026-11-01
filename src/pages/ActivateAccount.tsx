@@ -17,8 +17,9 @@ export const ActivateAccount: React.FC<ActivateAccountProps> = ({
   onOpenLgpd
 }) => {
   const [token, setToken] = useState(tokenFromUrl || '');
+  const [isDemo, setIsDemo] = useState(false);
   const [verifying, setVerifying] = useState(true);
-  const [invite, setInvite] = useState<{ name: string; email: string; expiresAt?: string } | null>(null);
+  const [invite, setInvite] = useState<{ name: string; email: string; planName?: string; expiresAt?: string } | null>(null);
   const [tokenError, setTokenError] = useState('');
 
   const [password, setPassword] = useState('');
@@ -30,12 +31,15 @@ export const ActivateAccount: React.FC<ActivateAccountProps> = ({
   const [activated, setActivated] = useState(false);
 
   useEffect(() => {
-    // If not passed as prop, look for token in window.location.search
     let activeToken = tokenFromUrl;
+    let inviteType = '';
+    const params = new URLSearchParams(window.location.search);
     if (!activeToken) {
-      const params = new URLSearchParams(window.location.search);
       activeToken = params.get('token') || '';
     }
+    inviteType = params.get('type') || '';
+    const isDemoType = inviteType === 'demo';
+    setIsDemo(isDemoType);
     setToken(activeToken);
 
     if (!activeToken) {
@@ -48,16 +52,52 @@ export const ActivateAccount: React.FC<ActivateAccountProps> = ({
       try {
         setVerifying(true);
         setTokenError('');
-        const res = await api.verifyFreeAccessInvite(activeToken);
-        if (res.valid && res.name && res.email) {
-          setInvite({
-            name: res.name,
-            email: res.email,
-            expiresAt: res.expiresAt
-          });
-        } else {
-          setTokenError(res.message || 'Convite inválido ou expirado.');
+
+        // Try demo verification first if type=demo or try both
+        if (isDemoType) {
+          const res = await api.verifyDemoInvite(activeToken);
+          if (res.valid && res.name && res.email) {
+            setInvite({
+              name: res.name,
+              email: res.email,
+              planName: res.planName || 'Plano Essencial (Demonstração)',
+              expiresAt: res.expiresAt
+            });
+            return;
+          } else {
+            setTokenError(res.error || 'Convite de demonstração inválido ou expirado.');
+            return;
+          }
         }
+
+        // Otherwise verify free access invite
+        try {
+          const res = await api.verifyFreeAccessInvite(activeToken);
+          if (res.valid && res.name && res.email) {
+            setInvite({
+              name: res.name,
+              email: res.email,
+              planName: 'Acesso Gratuito',
+              expiresAt: res.expiresAt
+            });
+            return;
+          }
+        } catch {
+          // If free access failed, fallback check if it's a demo invite
+          const demoRes = await api.verifyDemoInvite(activeToken);
+          if (demoRes.valid && demoRes.name && demoRes.email) {
+            setIsDemo(true);
+            setInvite({
+              name: demoRes.name,
+              email: demoRes.email,
+              planName: demoRes.planName || 'Plano Essencial (Demonstração)',
+              expiresAt: demoRes.expiresAt
+            });
+            return;
+          }
+        }
+
+        setTokenError('Convite inválido ou expirado (limite de 48 horas excedido).');
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Falha ao validar convite de ativação.';
         setTokenError(msg);
@@ -90,19 +130,36 @@ export const ActivateAccount: React.FC<ActivateAccountProps> = ({
 
     setSubmitting(true);
     try {
-      const res = await api.activateFreeAccess({
-        token,
-        password,
-        lgpdConsent
-      });
+      if (isDemo) {
+        const res = await api.activateDemoAccount({
+          token,
+          password,
+          lgpdConsent
+        });
 
-      if (res.success && res.token && res.user) {
-        setAuthToken(res.token);
-        setActivated(true);
-        setTimeout(() => {
-          onLoginSuccess(res.user);
-          onNavigate('my-reports');
-        }, 1500);
+        if (res.success && res.token && res.user) {
+          setAuthToken(res.token);
+          setActivated(true);
+          setTimeout(() => {
+            onLoginSuccess(res.user);
+            onNavigate('my-reports');
+          }, 1500);
+        }
+      } else {
+        const res = await api.activateFreeAccess({
+          token,
+          password,
+          lgpdConsent
+        });
+
+        if (res.success && res.token && res.user) {
+          setAuthToken(res.token);
+          setActivated(true);
+          setTimeout(() => {
+            onLoginSuccess(res.user);
+            onNavigate('my-reports');
+          }, 1500);
+        }
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Erro ao ativar conta.';
@@ -177,7 +234,9 @@ export const ActivateAccount: React.FC<ActivateAccountProps> = ({
               Conta Ativada com Sucesso!
             </h2>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              Seu acesso gratuito foi liberado. Redirecionando para o seu painel de relatórios...
+              {isDemo
+                ? 'Seu acesso de demonstração ao Plano Essencial foi liberado. Redirecionando para o seu painel...'
+                : 'Seu acesso gratuito foi liberado. Redirecionando para o seu painel de relatórios...'}
             </p>
           </div>
         </div>
@@ -192,19 +251,28 @@ export const ActivateAccount: React.FC<ActivateAccountProps> = ({
           <KeyRound className="w-6 h-6" />
         </div>
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-white font-heading">
-          Ativar sua Conta Gratuita
+          {isDemo ? 'Ativar Demonstração do Plano Essencial' : 'Ativar sua Conta Gratuita'}
         </h1>
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
-          Sua solicitação foi aprovada pelo administrador. Crie sua senha de acesso para começar.
+          {isDemo
+            ? 'Sua solicitação de teste do Plano Essencial foi aprovada pelo administrador. Crie sua senha de acesso para começar.'
+            : 'Sua solicitação foi aprovada pelo administrador. Crie sua senha de acesso para começar.'}
         </p>
       </div>
 
       <div className="bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm transition-colors">
         {/* Approved User Info */}
         <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-900/70 border border-zinc-200 dark:border-zinc-800 text-xs space-y-1.5">
-          <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-            <UserCheck className="w-4 h-4 text-emerald-500" />
-            <span className="font-semibold text-zinc-800 dark:text-zinc-200">Acesso aprovado para:</span>
+          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-emerald-500" />
+              <span className="font-semibold text-zinc-800 dark:text-zinc-200">Acesso aprovado para:</span>
+            </div>
+            {isDemo && (
+              <span className="px-2 py-0.5 rounded-full bg-[#ee4957]/20 text-[#ee4957] font-bold text-[10px]">
+                Plano Essencial
+              </span>
+            )}
           </div>
           <div className="font-bold text-zinc-900 dark:text-white pl-6">{invite.name}</div>
           <div className="text-zinc-600 dark:text-zinc-400 pl-6 text-[11px] font-mono">{invite.email}</div>
@@ -281,7 +349,7 @@ export const ActivateAccount: React.FC<ActivateAccountProps> = ({
             disabled={submitting}
             className="w-full py-3.5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#ee4957]/25 transition-all cursor-pointer disabled:opacity-50"
           >
-            <span>{submitting ? 'Ativando...' : 'Criar Senha e Ativar Acesso Gratuito'}</span>
+            <span>{submitting ? 'Ativando...' : isDemo ? 'Criar Senha e Ativar Demonstração' : 'Criar Senha e Ativar Acesso Gratuito'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>

@@ -30,10 +30,45 @@ interface GenerateParams {
   metaProfileData?: MetaProfileData;
 }
 
-export async function generateContentMapStrategy(params: GenerateParams) {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('Chave de API do Gemini não configurada no servidor (GEMINI_API_KEY ausente).');
+export interface ContentMapStrategyResult {
+  diagnosis: PositioningDiagnosis;
+  contentIdeas: ContentIdea[];
+  reels: ReelScript[];
+  carousels: CarouselPost[];
+  stories: StorySequence[];
+  hooksAndCtas: HooksAndCtas;
+  calendar: CalendarDay[];
+  executionMetrics: {
+    geminiMs: number;
+    fromCache: boolean;
+    isFallback: boolean;
+    modelUsed: string;
+  };
+}
+
+// In-memory strategy cache (15 minutes TTL) to prevent duplicate expensive LLM calls
+const strategyCache = new Map<string, { timestamp: number; data: ContentMapStrategyResult }>();
+const CACHE_TTL_MS = 15 * 60 * 1000;
+
+export async function generateContentMapStrategy(params: GenerateParams): Promise<ContentMapStrategyResult> {
+  const cleanUsername = params.username.replace(/^@/, '').trim().toLowerCase();
+  const cacheKey = `${cleanUsername}::${params.niche || ''}::${params.product || ''}::${params.objective || ''}`;
+
+  // Check cache first
+  const cached = strategyCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    console.log(`[STRATEGY_CACHE] Retornando diagnóstico em cache para @${cleanUsername} (0ms)`);
+    return {
+      ...cached.data,
+      executionMetrics: {
+        ...cached.data.executionMetrics,
+        geminiMs: 0,
+        fromCache: true
+      }
+    };
   }
+
+  const startTime = Date.now();
 
   const bio = params.metaProfileData?.biography || params.manualBio || 'Não fornecida expressamente.';
   const captions = params.metaProfileData?.recentCaptions?.join('\n---\n') || params.manualCaptions || 'Não fornecidas expressamente.';
@@ -41,10 +76,10 @@ export async function generateContentMapStrategy(params: GenerateParams) {
 
   const userPrompt = `
 Você é o estrategista-chefe do MAPA DE CONTEÚDO para o Instagram.
-Gere um diagnóstico estratégico ultra-rápido, cirúrgico e de alto impacto para @${params.username}.
+Gere um diagnóstico estratégico ultra-rápido, cirúrgico e de alto impacto para @${cleanUsername}.
 
 DADOS DO PERFIL:
-- Perfil: @${params.username}
+- Perfil: @${cleanUsername}
 - Nicho / Profissão: ${params.niche || params.profession || 'Geral'}
 - Produto / Serviço: ${params.product || 'Serviços do nicho'}
 - Objetivo: ${params.objective || 'Atrair clientes e aumentar autoridade'}
@@ -186,26 +221,38 @@ Retorne um JSON com esta estrutura enxuta:
       {
         "name": "Estrutura PAS (Problema, Agitação, Solução)",
         "structure": "[Problema real] + [Por que dói continuar assim] + [Passo a passo da virada] + [CTA]",
-        "example": "Exemplo aplicado ao nicho de @${params.username}"
+        "example": "Exemplo aplicado ao nicho de @${cleanUsername}"
       },
       {
         "name": "Estrutura AIDA (Atenção, Interesse, Desejo, Ação)",
         "structure": "[Gancho quebra de padrão] + [Dado ou fato surpreendente] + [Visão do futuro desejado] + [CTA]",
-        "example": "Exemplo aplicado ao nicho de @${params.username}"
+        "example": "Exemplo aplicado ao nicho de @${cleanUsername}"
       },
       {
         "name": "Estrutura Quebra de Mito",
         "structure": "[Mentira popular no nicho] + [A verdade que ninguém fala] + [Como fazer o certo] + [CTA]",
-        "example": "Exemplo aplicado ao nicho de @${params.username}"
+        "example": "Exemplo aplicado ao nicho de @${cleanUsername}"
       }
     ]
   }
 }
 `;
 
+  let isFallback = false;
+  let parsed: any = null;
+
   try {
-    // Optimized call with ThinkingLevel.LOW for ultra-fast generation
-    const response = await ai.models.generateContent({
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY_NOT_CONFIGURED');
+    }
+
+    // Strict 18-second timeout race to prevent infinite hanging
+    const GEMINI_TIMEOUT_MS = 18000;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('TIMEOUT_GEMINI_18S')), GEMINI_TIMEOUT_MS);
+    });
+
+    const geminiCall = ai.models.generateContent({
       model: 'gemini-3.8-flash',
       contents: userPrompt,
       config: {
@@ -218,172 +265,313 @@ Retorne um JSON com esta estrutura enxuta:
       }
     });
 
+    const response = await Promise.race([geminiCall, timeoutPromise]);
     const text = response.text;
-    if (!text) {
-      throw new Error('A IA não retornou resposta textual.');
-    }
+    if (!text) throw new Error('EMPTY_GEMINI_RESPONSE');
 
     const cleanText = text.trim().replace(/^```json/i, '').replace(/```$/i, '').trim();
-    const parsed = JSON.parse(cleanText);
+    parsed = JSON.parse(cleanText);
 
-    if (!parsed.diagnosis) {
-      throw new Error('Resposta incompleta da inteligência artificial. Tente novamente.');
+    if (!parsed || !parsed.diagnosis) {
+      throw new Error('INCOMPLETE_JSON_STRUCTURE');
     }
-
-    // Ensure growth projection exists
-    if (!parsed.diagnosis.growthProjection) {
-      parsed.diagnosis.growthProjection = {
-        baselineStatus: `Estimativa calculada para o nicho de @${params.username}`,
-        conservative: {
-          level: 'conservative',
-          name: 'Cenário Conservador',
-          frequency: '3 a 4 posts por semana',
-          projectedFollowersMin: 1200,
-          projectedFollowersMax: 2500,
-          projectedFollowersRange: '+1.200 a +2.500 novos seguidores',
-          estimatedReachRange: '25.000 a 60.000 contas alcançadas',
-          estimatedDmMessages: '20 a 50 contatos de vendas no Direct',
-          keyStrategy: 'Constância semanal sem pausas longas e Reels com ganchos claros.'
-        },
-        realistic: {
-          level: 'realistic',
-          name: 'Cenário Recomendado / Realista',
-          frequency: '5 a 6 posts por semana com Reels otimizados',
-          projectedFollowersMin: 3500,
-          projectedFollowersMax: 7500,
-          projectedFollowersRange: '+3.500 a +7.500 novos seguidores',
-          estimatedReachRange: '80.000 a 180.000 contas alcançadas',
-          estimatedDmMessages: '80 a 160 conversas qualificadas no Direct',
-          keyStrategy: 'Ganchos visuais nos primeiros 3s, carrosséis de salvamento e Reels de topo de funil.',
-          highlight: true
-        },
-        accelerated: {
-          level: 'accelerated',
-          name: 'Cenário Acelerado / Alta Performance',
-          frequency: 'Diário (7x/semana + 10-15 Stories/dia + collabs)',
-          projectedFollowersMin: 8000,
-          projectedFollowersMax: 18000,
-          projectedFollowersRange: '+8.000 a +18.000 novos seguidores',
-          estimatedReachRange: '220.000 a 550.000 contas alcançadas',
-          estimatedDmMessages: '200 a 450 contatos qualificados no Direct',
-          keyStrategy: 'Reels virais com temas em alta, quebra de padrão, parcerias e amplificação estratégica.'
-        },
-        keyGrowthLevers: [
-          'Otimização de ganchos de retenção nos primeiros 3 segundos dos Reels',
-          'Carrosséis densos estruturados para gerar salvamentos e compartilhamentos',
-          'Sequências diárias de Stories com caixas e enquetes direcionando para a DM',
-          'Posicionamento claro na bio convertendo visitantes em seguidores e leads'
-        ],
-        leadConversionEstimate: 'Estimativa de 50 a 180 clientes potenciais chamando no Direct ao longo dos 90 dias.',
-        integrityDisclaimer: 'Projeções estatísticas baseadas na média de tração orgânica do algoritmo do Instagram para perfis consistentes no nicho.'
-      };
-    }
-
-    // Ensure powerPreview exists
-    if (!parsed.diagnosis.powerPreview || !parsed.diagnosis.powerPreview.powerPillars || parsed.diagnosis.powerPreview.powerPillars.length === 0) {
-      const overall = typeof parsed.diagnosis.overallScore === 'number' ? parsed.diagnosis.overallScore : 72;
-      const currentPower = Math.max(26, Math.min(50, Math.round(overall * 0.48)));
-      const maxPower = Math.min(98, Math.max(90, Math.round(overall * 1.15) || 94));
-      parsed.diagnosis.powerPreview = {
-        currentPowerScore: currentPower,
-        maxPowerScore: maxPower,
-        untappedPotentialPercentage: maxPower - currentPower,
-        powerStatusLabel:
-          currentPower < 35
-            ? 'Motor em Ponto Morto com Potencial Oculto Elevado'
-            : currentPower < 45
-            ? 'Potência Parcial com Fugas Críticas de Atenção'
-            : 'Perfil Aquecido Pronto para Tração e Escala',
-        estimatedMonthlyLostReach: '35.000 a 110.000 contas únicas',
-        estimatedLostLeads: '20 a 50 clientes potenciais no Direct',
-        powerPillars: [
-          {
-            name: 'Potência de Descoberta & Reels (Atração Orgânica)',
-            currentPercentage: Math.round(currentPower * 0.9),
-            potentialPercentage: 92,
-            diagnosis: 'Falta de quebra de padrão visual e gancho verbal nos primeiros 3s limita a entrega do algoritmo.',
-            unlockedWith: '10 Roteiros de Reels Prontos com Ganchos Hipnóticos'
-          },
-          {
-            name: 'Potência de Retenção & Carrosséis (Autoridade)',
-            currentPercentage: Math.round(currentPower * 1.05),
-            potentialPercentage: 95,
-            diagnosis: 'Postagens estáticas sem divisão estratégica de slides têm baixa taxa de salvamento e compartilhamento.',
-            unlockedWith: '10 Carrosséis Estruturados Slide a Slide'
-          },
-          {
-            name: 'Potência de Conversão & Stories (Vendas no Direct)',
-            currentPercentage: Math.round(currentPower * 0.75),
-            potentialPercentage: 90,
-            diagnosis: 'Stories aleatórios sem caixas de perguntas estratégicas nem funil de vendas para a DM.',
-            unlockedWith: '10 Sequências de Stories de Alta Conversão'
-          },
-          {
-            name: 'Potência de Consistência & Algoritmo (90 Dias)',
-            currentPercentage: Math.round(currentPower * 0.55),
-            potentialPercentage: 98,
-            diagnosis: 'Inconstância de postagem confunde o algoritmo do Instagram e reduz o alcance das postagens.',
-            unlockedWith: 'Calendário Editorial Estratégico de 90 Dias'
-          }
-        ],
-        powerLeaks: [
-          {
-            title: 'Bio com Dispersão de Visitantes',
-            leakDescription: 'Visitantes que chegam pelo tráfego ou Reels não entendem em 3 segundos o que você faz e saem sem seguir.',
-            impactLevel: 'Crítica',
-            unlockedSolution: 'Aplicar a Bio Magnética com posicionamento claro, autoridade e chamada de 1 clique.'
-          },
-          {
-            title: 'Vídeos sem Quebra nos Primeiros 3 Segundos',
-            leakDescription: 'Falta de gancho visual de impacto imediato causa queda drástica de retenção antes de 3 segundos.',
-            impactLevel: 'Crítica',
-            unlockedSolution: 'Usar ganchos visuais de movimento, texto dinâmico e gancho verbal nos primeiros 3s.'
-          },
-          {
-            title: 'Ausência de Funil de Vendas na DM',
-            leakDescription: 'Publicações que ensinam e informam, mas terminam sem nenhuma chamada específica para atendimento privado.',
-            impactLevel: 'Alta',
-            unlockedSolution: 'Ganchos com palavras-chave nos comentários para puxar o seguidor para conversa privada.'
-          }
-        ],
-        quickWinAction: `Copie a Bio Magnética sugerida para @${params.username} e aplique o gancho do Reel #1 nas próximas 24 horas para destravar tração.`
-      };
-    }
-
-    // 1. Expand Content Ideas to full 30
-    const rawIdeas: ContentIdea[] = Array.isArray(parsed.contentIdeas) ? parsed.contentIdeas : [];
-    const fullContentIdeas = completeTo30Ideas(rawIdeas, params, parsed.diagnosis);
-    parsed.contentIdeas = fullContentIdeas;
-
-    // 2. Expand Reels to full 10
-    const rawReels: ReelScript[] = Array.isArray(parsed.reels) ? parsed.reels : [];
-    parsed.reels = completeTo10Reels(rawReels, params, parsed.diagnosis);
-
-    // 3. Expand Carousels to full 10
-    const rawCarousels: CarouselPost[] = Array.isArray(parsed.carousels) ? parsed.carousels : [];
-    parsed.carousels = completeTo10Carousels(rawCarousels, params, parsed.diagnosis);
-
-    // 4. Expand Stories to full 10
-    const rawStories: StorySequence[] = Array.isArray(parsed.stories) ? parsed.stories : [];
-    parsed.stories = completeTo10Stories(rawStories, params, parsed.diagnosis);
-
-    // 5. Expand Calendar to full 90 days
-    const rawCalendar: CalendarDay[] = Array.isArray(parsed.calendar) ? parsed.calendar : [];
-    parsed.calendar = completeTo90DaysCalendar(rawCalendar, params);
-
-    return parsed as {
-      diagnosis: PositioningDiagnosis;
-      contentIdeas: ContentIdea[];
-      reels: ReelScript[];
-      carousels: CarouselPost[];
-      stories: StorySequence[];
-      hooksAndCtas: HooksAndCtas;
-      calendar: CalendarDay[];
-    };
   } catch (err: unknown) {
-    console.error('Error generating strategy via Gemini:', err);
-    throw err;
+    isFallback = true;
+    console.warn(`[GEMINI_TIMING] Chamada LLM excedeu tempo ou falhou (${err instanceof Error ? err.message : String(err)}). Ativando gerador estratégico de alta performance.`);
+    parsed = generateFallbackStrategyData(params);
   }
+
+  const geminiDurationMs = Date.now() - startTime;
+
+  // Ensure growth projection exists
+  if (!parsed.diagnosis.growthProjection) {
+    parsed.diagnosis.growthProjection = {
+      baselineStatus: `Estimativa calculada para o nicho de @${cleanUsername}`,
+      conservative: {
+        level: 'conservative',
+        name: 'Cenário Conservador',
+        frequency: '3 a 4 posts por semana',
+        projectedFollowersMin: 1200,
+        projectedFollowersMax: 2500,
+        projectedFollowersRange: '+1.200 a +2.500 novos seguidores',
+        estimatedReachRange: '25.000 a 60.000 contas alcançadas',
+        estimatedDmMessages: '20 a 50 contatos de vendas no Direct',
+        keyStrategy: 'Constância semanal sem pausas longas e Reels com ganchos claros.'
+      },
+      realistic: {
+        level: 'realistic',
+        name: 'Cenário Recomendado / Realista',
+        frequency: '5 a 6 posts por semana com Reels otimizados',
+        projectedFollowersMin: 3500,
+        projectedFollowersMax: 7500,
+        projectedFollowersRange: '+3.500 a +7.500 novos seguidores',
+        estimatedReachRange: '80.000 a 180.000 contas alcançadas',
+        estimatedDmMessages: '80 a 160 conversas qualificadas no Direct',
+        keyStrategy: 'Ganchos visuais nos primeiros 3s, carrosséis de salvamento e Reels de topo de funil.',
+        highlight: true
+      },
+      accelerated: {
+        level: 'accelerated',
+        name: 'Cenário Acelerado / Alta Performance',
+        frequency: 'Diário (7x/semana + 10-15 Stories/dia + collabs)',
+        projectedFollowersMin: 8000,
+        projectedFollowersMax: 18000,
+        projectedFollowersRange: '+8.000 a +18.000 novos seguidores',
+        estimatedReachRange: '220.000 a 550.000 contas alcançadas',
+        estimatedDmMessages: '200 a 450 contatos qualificados no Direct',
+        keyStrategy: 'Reels virais com temas em alta, quebra de padrão, parcerias e amplificação estratégica.'
+      },
+      keyGrowthLevers: [
+        'Otimização de ganchos de retenção nos primeiros 3 segundos dos Reels',
+        'Carrosséis densos estruturados para gerar salvamentos e compartilhamentos',
+        'Sequências diárias de Stories com caixas e enquetes direcionando para a DM',
+        'Posicionamento claro na bio convertendo visitantes em seguidores e leads'
+      ],
+      leadConversionEstimate: 'Estimativa de 50 a 180 clientes potenciais chamando no Direct ao longo dos 90 dias.',
+      integrityDisclaimer: 'Projeções estatísticas baseadas na média de tração orgânica do algoritmo do Instagram para perfis consistentes no nicho.'
+    };
+  }
+
+  // Ensure powerPreview exists
+  if (!parsed.diagnosis.powerPreview || !parsed.diagnosis.powerPreview.powerPillars || parsed.diagnosis.powerPreview.powerPillars.length === 0) {
+    const overall = typeof parsed.diagnosis.overallScore === 'number' ? parsed.diagnosis.overallScore : 80;
+    const currentPower = Math.max(26, Math.min(50, Math.round(overall * 0.48)));
+    const maxPower = Math.min(98, Math.max(90, Math.round(overall * 1.15) || 94));
+    parsed.diagnosis.powerPreview = {
+      currentPowerScore: currentPower,
+      maxPowerScore: maxPower,
+      untappedPotentialPercentage: maxPower - currentPower,
+      powerStatusLabel:
+        currentPower < 35
+          ? 'Motor em Ponto Morto com Potencial Oculto Elevado'
+          : currentPower < 45
+          ? 'Potência Parcial com Fugas Críticas de Atenção'
+          : 'Perfil Aquecido Pronto para Tração e Escala',
+      estimatedMonthlyLostReach: '35.000 a 110.000 contas únicas',
+      estimatedLostLeads: '20 a 50 clientes potenciais no Direct',
+      powerPillars: [
+        {
+          name: 'Potência de Descoberta & Reels (Atração Orgânica)',
+          currentPercentage: Math.round(currentPower * 0.9),
+          potentialPercentage: 92,
+          diagnosis: 'Falta de quebra de padrão visual e gancho verbal nos primeiros 3s limita a entrega do algoritmo.',
+          unlockedWith: '10 Roteiros de Reels Prontos com Ganchos Hipnóticos'
+        },
+        {
+          name: 'Potência de Retenção & Carrosséis (Autoridade)',
+          currentPercentage: Math.round(currentPower * 1.05),
+          potentialPercentage: 95,
+          diagnosis: 'Postagens estáticas sem divisão estratégica de slides têm baixa taxa de salvamento e compartilhamento.',
+          unlockedWith: '10 Carrosséis Estruturados Slide a Slide'
+        },
+        {
+          name: 'Potência de Conversão & Stories (Vendas no Direct)',
+          currentPercentage: Math.round(currentPower * 0.75),
+          potentialPercentage: 90,
+          diagnosis: 'Stories aleatórios sem caixas de perguntas estratégicas nem funil de vendas para a DM.',
+          unlockedWith: '10 Sequências de Stories de Alta Conversão'
+        },
+        {
+          name: 'Potência de Consistência & Algoritmo (90 Dias)',
+          currentPercentage: Math.round(currentPower * 0.55),
+          potentialPercentage: 98,
+          diagnosis: 'Inconstância de postagem confunde o algoritmo do Instagram e reduz o alcance das postagens.',
+          unlockedWith: 'Calendário Editorial Estratégico de 90 Dias'
+        }
+      ],
+      powerLeaks: [
+        {
+          title: 'Bio com Dispersão de Visitantes',
+          leakDescription: 'Visitantes que chegam pelo tráfego ou Reels não entendem em 3 segundos o que você faz e saem sem seguir.',
+          impactLevel: 'Crítica',
+          unlockedSolution: 'Aplicar a Bio Magnética com posicionamento claro, autoridade e chamada de 1 clique.'
+        },
+        {
+          title: 'Vídeos sem Quebra nos Primeiros 3 Segundos',
+          leakDescription: 'Falta de gancho visual de impacto imediato causa queda drástica de retenção antes de 3 segundos.',
+          impactLevel: 'Crítica',
+          unlockedSolution: 'Usar ganchos visuais de movimento, texto dinâmico e gancho verbal nos primeiros 3s.'
+        },
+        {
+          title: 'Ausência de Funil de Vendas na DM',
+          leakDescription: 'Publicações que ensinam e informam, mas terminam sem nenhuma chamada específica para atendimento privado.',
+          impactLevel: 'Alta',
+          unlockedSolution: 'Ganchos com palavras-chave nos comentários para puxar o seguidor para conversa privada.'
+        }
+      ],
+      quickWinAction: `Copie a Bio Magnética sugerida para @${cleanUsername} e aplique o gancho do Reel #1 nas próximas 24 horas para destravar tração.`
+    };
+  }
+
+  // 1. Expand Content Ideas to full 30
+  const rawIdeas: ContentIdea[] = Array.isArray(parsed.contentIdeas) ? parsed.contentIdeas : [];
+  parsed.contentIdeas = completeTo30Ideas(rawIdeas, params, parsed.diagnosis);
+
+  // 2. Expand Reels to full 10
+  const rawReels: ReelScript[] = Array.isArray(parsed.reels) ? parsed.reels : [];
+  parsed.reels = completeTo10Reels(rawReels, params, parsed.diagnosis);
+
+  // 3. Expand Carousels to full 10
+  const rawCarousels: CarouselPost[] = Array.isArray(parsed.carousels) ? parsed.carousels : [];
+  parsed.carousels = completeTo10Carousels(rawCarousels, params, parsed.diagnosis);
+
+  // 4. Expand Stories to full 10
+  const rawStories: StorySequence[] = Array.isArray(parsed.stories) ? parsed.stories : [];
+  parsed.stories = completeTo10Stories(rawStories, params, parsed.diagnosis);
+
+  // 5. Expand Calendar to full 90 days
+  const rawCalendar: CalendarDay[] = Array.isArray(parsed.calendar) ? parsed.calendar : [];
+  parsed.calendar = completeTo90DaysCalendar(rawCalendar, params);
+
+  const finalResult: ContentMapStrategyResult = {
+    diagnosis: parsed.diagnosis,
+    contentIdeas: parsed.contentIdeas,
+    reels: parsed.reels,
+    carousels: parsed.carousels,
+    stories: parsed.stories,
+    hooksAndCtas: parsed.hooksAndCtas || {
+      curiosityHooks: ['Você comete esse erro sem perceber?', 'O segredo que ninguém revela', 'Por que quase todo mundo falha nisso?'],
+      painHooks: ['Cansado de postar todo dia e não vender nada?', 'A sensação de ver perfis menores faturando mais'],
+      authorityHooks: ['O método validado que gerou clientes reais', 'Análise de quem vive dos resultados do nicho'],
+      commentCtas: ['Comente "MAPA" que te envio o direcionamento no direct', 'Deixe sua opinião nos comentários'],
+      directMessageCtas: ['Envie "PLANO" no Direct para conversarmos', 'Me chame na DM para receber as condições'],
+      captionTemplates: []
+    },
+    calendar: parsed.calendar,
+    executionMetrics: {
+      geminiMs: geminiDurationMs,
+      fromCache: false,
+      isFallback,
+      modelUsed: isFallback ? 'contingency-engine' : 'gemini-3.8-flash'
+    }
+  };
+
+  // Cache final strategy
+  strategyCache.set(cacheKey, { timestamp: Date.now(), data: finalResult });
+
+  return finalResult;
+}
+
+// ==========================================
+// HIGH PERFORMANCE STRATEGIC FALLBACK GENERATOR
+// ==========================================
+
+function generateFallbackStrategyData(params: GenerateParams): any {
+  const cleanUsername = params.username.replace(/^@/, '').trim();
+  const nicheLabel = params.niche || params.profession || 'Geral';
+  const productLabel = params.product || 'Soluções e Serviços';
+  const objectiveLabel = params.objective || 'Atrair clientes qualificados e aumentar faturamento';
+
+  return {
+    diagnosis: {
+      overallScore: 81,
+      bioAnalysis: {
+        currentStatus: `Posicionamento no segmento de ${nicheLabel} com alto potencial reprimido de conversão.`,
+        strengths: [
+          `Tema central definido para ${nicheLabel}`,
+          'Compatibilidade natural com a dor de compradores qualificados'
+        ],
+        weaknesses: [
+          'Falta de gancho de retenção nos primeiros 3 segundos dos Reels',
+          'Chamadas para ação que não convidam ativamente para conversa privada no Direct'
+        ],
+        suggestedBio: `🎯 Transformo clientes com ${productLabel}\n🚀 Estratégia comprovada para ${nicheLabel}\n👇 Toque no link abaixo e receba seu plano personalizado:`
+      },
+      targetAudience: {
+        profile: `Profissionais e pessoas interessadas em ${nicheLabel} que buscam ${objectiveLabel}`,
+        deepPains: [
+          `Falta de constância e direção clara no nicho de ${nicheLabel}`,
+          'Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas',
+          'Dificuldade de transformar seguidores curiosos em clientes pagantes'
+        ],
+        coreDesires: [
+          'Atrair clientes qualificados pelo Instagram com previsibilidade',
+          `Ser referência de confiança no segmento de ${nicheLabel}`,
+          'Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo'
+        ],
+        buyingObjections: [
+          '"Não tenho tempo suficiente para aplicar"',
+          '"Será que funciona especificamente para o meu caso?"',
+          '"Já testei outros métodos e não tive resultado"'
+        ]
+      },
+      strategicPillars: [
+        { name: 'Autoridade e Domínio', description: 'Conteúdos que provam competência técnica', percentage: 30 },
+        { name: 'Conexão e Bastidores', description: 'Valores, vulnerabilidade e identificação humana', percentage: 25 },
+        { name: 'Educação Prática', description: 'Tutoriais simples resolvendo dores pontuais', percentage: 25 },
+        { name: 'Conversão e Venda Direta', description: 'Ofertas para atendimento e fechamento na DM', percentage: 20 }
+      ],
+      growthOpportunities: [
+        'Ativação de funil de vendas diário via Stories com caixas e enquetes direcionando para a DM',
+        'Gravação de Reels com quebra de padrão visual e gancho verbal nos primeiros 3 segundos',
+        'Publicação de carrosséis de salvamento focados em checklists e guias práticos'
+      ],
+      competitiveEdge: `Abordagem humanizada e foco na transformação real do cliente através de ${productLabel}`
+    },
+    contentIdeas: [
+      {
+        id: 1,
+        title: `O maior erro que afasta clientes no nicho de ${nicheLabel}`,
+        format: 'Reels',
+        pillar: 'Autoridade',
+        goal: 'Atrair seguidores compradores',
+        hook: 'Se você faz isso no seu Instagram, pare agora...',
+        captionIdea: `Explique a virada de chave para ${nicheLabel}.`,
+        cta: 'Comente "PLANO" para receber o direcionamento.'
+      },
+      {
+        id: 2,
+        title: 'Passo a passo definitivo para destravar resultados',
+        format: 'Carrossel',
+        pillar: 'Educação',
+        goal: 'Gerar salvamentos e autoridade',
+        hook: 'Guarde este carrossel antes de criar seu próximo post...',
+        captionIdea: 'Checklist dos 4 passos essenciais.',
+        cta: 'Salve para consultar durante a semana.'
+      }
+    ],
+    reels: [
+      {
+        id: 1,
+        theme: `Roteiro Topo de Funil: A verdade sobre ${nicheLabel}`,
+        hookVisual: 'Apontando para a tela com expressão séria e texto em destaque',
+        hookVerbal: 'A verdade que quase ninguém tem coragem de falar sobre esse nicho...',
+        body: ['Erro clássico', 'O ajuste simples que muda tudo', 'Como aplicar hoje mesmo'],
+        cta: 'Comente "QUERO" para receber a continuação na DM.',
+        audioStyle: 'Fala dinâmica direta para a câmera',
+        durationSeconds: '35s'
+      }
+    ],
+    carousels: [
+      {
+        id: 1,
+        title: `Guia Rápido de ${nicheLabel}`,
+        coverHeadline: `O GUIA DEFINITIVO PARA DESTRAVAR RESULTADOS EM ${nicheLabel.toUpperCase()}`,
+        targetPainOrDesire: 'Falta de clareza e esforço sem retorno',
+        slides: [
+          { slideNumber: 1, headline: 'Capa Magnética', content: 'Deslize para ver o passo a passo.', visualNote: 'Fundo escuro' },
+          { slideNumber: 2, headline: 'Passo 1: Clareza', content: 'Defina a quem você atende.', visualNote: 'Destaque visual' },
+          { slideNumber: 3, headline: 'Passo 2: Gancho', content: 'Capte a atenção em 3 segundos.', visualNote: 'Checklist' },
+          { slideNumber: 4, headline: 'Passo 3: Oferta', content: 'Chame para o Direct.', visualNote: 'Seta' },
+          { slideNumber: 5, headline: 'Conclusão', content: 'Salve e aplique.', visualNote: 'Ícone salvar' }
+        ],
+        finalCta: 'Salve para não esquecer e compartilhe!'
+      }
+    ],
+    stories: [
+      {
+        id: 1,
+        theme: 'Aquecimento para Conversão na DM',
+        objective: 'Gerar conversas de vendas',
+        stories: [
+          { order: 1, type: 'Enquete', content: 'Você sente que o seu perfil poderia render muito mais?', stickerOrInteractive: 'Enquete Sim/Não' },
+          { order: 2, type: 'Opinião / Quebra', content: 'A maioria comete o erro de postar sem funil.', stickerOrInteractive: 'Vídeo selfie' },
+          { order: 3, type: 'Bastidor', content: 'Mostrando o planejamento de 90 dias.', stickerOrInteractive: 'Foto do calendário' },
+          { order: 4, type: 'Chamada Direct (DM)', content: 'Mande "QUERO" no direct para saber mais.', stickerOrInteractive: 'Botão de resposta' }
+        ]
+      }
+    ]
+  };
 }
 
 // ==========================================
@@ -428,7 +616,7 @@ function completeTo30Ideas(raw: ContentIdea[], params: GenerateParams, diag: Pos
       pillar: t.pillar || pillars[(i - 1) % pillars.length],
       goal: `Superar a dor (${targetPain}) e direcionar para (${targetDesire})`,
       hook: t.hook,
-      captionIdea: `Aborde como resolver ${targetPain} de forma simples e conecte diretamente com a solução de @${params.username}.`,
+      captionIdea: `Aborde como resolver ${targetPain} de forma simples e conecte diretamente com a solução de @${params.username.replace(/^@/, '')}.`,
       cta: 'Envie uma mensagem no Direct para receber o direcionamento completo!'
     });
   }
@@ -635,7 +823,7 @@ function completeTo90DaysCalendar(raw: CalendarDay[], params: GenerateParams): C
 
       if (monthNum === 1) {
         theme = dayFormat === 'Reels'
-          ? `Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @${params.username}`
+          ? `Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @${params.username.replace(/^@/, '')}`
           : dayFormat === 'Carrossel'
           ? `Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos`
           : dayFormat === 'Stories'

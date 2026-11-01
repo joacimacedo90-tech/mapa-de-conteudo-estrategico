@@ -1,4 +1,4 @@
-import { User, Report, PricingPlan, AdminSettings, WebhookLog, MetaDiscoveryResult, FreeAccessRequest, ClientDiagnostic } from './types';
+import { User, Report, PricingPlan, AdminSettings, WebhookLog, MetaDiscoveryResult, FreeAccessRequest, ClientDiagnostic, DemoAccessRequest, ExecutionMetrics } from './types';
 
 const TOKEN_KEY = 'mapa_auth_token';
 const ADMIN_TOKEN_KEY = 'mapa_admin_token';
@@ -27,6 +27,7 @@ export function setAdminToken(token: string | null) {
   }
 }
 
+// Resilient request helper with 35s client timeout to prevent infinite UI loading
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -42,18 +43,43 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${userToken}`;
   }
 
-  const res = await fetch(endpoint, {
-    ...options,
-    headers
-  });
-
-  const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw new Error(data.error || 'Ocorreu um erro na solicitação.');
+  // Create an abort controller with 35s timeout unless caller supplied one
+  let signal = options.signal;
+  let timer: NodeJS.Timeout | null = null;
+  if (!signal) {
+    const controller = new AbortController();
+    timer = setTimeout(() => {
+      controller.abort(new Error('A requisição excedeu o limite de tempo (35 segundos). Por favor, tente novamente.'));
+    }, 35000);
+    signal = controller.signal;
   }
 
-  return data as T;
+  try {
+    const res = await fetch(endpoint, {
+      ...options,
+      headers,
+      signal
+    });
+
+    if (timer) clearTimeout(timer);
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Ocorreu um erro na solicitação.');
+    }
+
+    return data as T;
+  } catch (err: unknown) {
+    if (timer) clearTimeout(timer);
+    if (err instanceof Error) {
+      if (err.name === 'AbortError') {
+        throw new Error('A requisição demorou mais do que o esperado e foi interrompida para sua proteção. Clique em "Tentar Novamente".');
+      }
+      throw err;
+    }
+    throw new Error('Falha de conexão com o servidor. Verifique sua internet.');
+  }
 }
 
 export const api = {
@@ -324,6 +350,100 @@ export const api = {
   }> {
     return request(`/api/admin/client-diagnostics/${id}`, {
       method: 'DELETE'
+    });
+  },
+
+  // Testes do Plano Essencial (Demonstração Gratuita)
+  async requestDemoAccess(payload: { name: string; email: string }): Promise<{
+    success: boolean;
+    message: string;
+    request: DemoAccessRequest;
+  }> {
+    return request('/api/demo-access/request', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async verifyDemoInvite(token: string): Promise<{
+    valid: boolean;
+    name?: string;
+    email?: string;
+    planId?: string;
+    planName?: string;
+    expiresAt?: string;
+    error?: string;
+  }> {
+    return request(`/api/demo-access/verify-invite?token=${encodeURIComponent(token)}`);
+  },
+
+  async activateDemoAccount(payload: {
+    token: string;
+    password: string;
+    lgpdConsent: boolean;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    token: string;
+    user: User;
+  }> {
+    return request('/api/demo-access/activate', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async getAdminDemoRequests(): Promise<{ requests: DemoAccessRequest[] }> {
+    return request('/api/admin/demo-access-requests');
+  },
+
+  async adminApproveDemoRequest(id: string): Promise<{
+    success: boolean;
+    message: string;
+    request: DemoAccessRequest;
+    inviteUrl: string;
+    inviteToken: string;
+    emailStatus?: string;
+  }> {
+    return request(`/api/admin/demo-access-requests/${id}/approve`, {
+      method: 'POST'
+    });
+  },
+
+  async adminRejectDemoRequest(id: string, reason?: string): Promise<{
+    success: boolean;
+    message: string;
+    request: DemoAccessRequest;
+  }> {
+    return request(`/api/admin/demo-access-requests/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason })
+    });
+  },
+
+  async adminUpdateDemoRequestStatus(id: string, status: string): Promise<{
+    success: boolean;
+    message: string;
+    request: DemoAccessRequest;
+  }> {
+    return request(`/api/admin/demo-access-requests/${id}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status })
+    });
+  },
+
+  async getAdminDemoUsers(): Promise<{ demoUsers: User[] }> {
+    return request('/api/admin/demo-users');
+  },
+
+  async adminToggleDemoUserStatus(id: string, status: 'active' | 'blocked' | 'expired'): Promise<{
+    success: boolean;
+    message: string;
+    user: User;
+  }> {
+    return request(`/api/admin/demo-users/${id}/toggle`, {
+      method: 'POST',
+      body: JSON.stringify({ status })
     });
   }
 };

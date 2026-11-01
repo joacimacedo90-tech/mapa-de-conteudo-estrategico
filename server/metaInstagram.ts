@@ -7,15 +7,27 @@ export interface MetaDiscoveryResult {
   data?: MetaProfileData;
 }
 
+const profileCache = new Map<string, { timestamp: number; result: MetaDiscoveryResult }>();
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutos
+
 export async function fetchInstagramProfileData(targetUsername: string): Promise<MetaDiscoveryResult> {
   const cleanUsername = targetUsername.replace(/^@/, '').trim().toLowerCase();
+
+  // Check cache first
+  const cached = profileCache.get(cleanUsername);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.result;
+  }
+
   const { token, accountId } = db.getMetaCredentials();
 
   if (!token || !accountId) {
-    return {
+    const notConfResult: MetaDiscoveryResult = {
       status: 'not_configured',
       message: 'A integração oficial da Meta Instagram Business Discovery não está configurada no servidor (tokens de acesso ausentes). Por transparência e ética, não realizamos scraping não autorizado nem inventamos métricas de seguidores.'
     };
+    profileCache.set(cleanUsername, { timestamp: Date.now(), result: notConfResult });
+    return notConfResult;
   }
 
   try {
@@ -69,16 +81,20 @@ export async function fetchInstagramProfileData(targetUsername: string): Promise
       recentCaptions
     };
 
-    return {
+    const finalResult: MetaDiscoveryResult = {
       status: 'connected',
       message: 'Dados oficiais obtidos com sucesso diretamente via Meta Instagram Business Discovery.',
       data: profileData
     };
+    profileCache.set(cleanUsername, { timestamp: Date.now(), result: finalResult });
+    return finalResult;
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Falha na conexão com os servidores da Meta.';
-    return {
+    const errorResult: MetaDiscoveryResult = {
       status: 'error_account_private_or_invalid',
       message: `Falha na requisição à Meta API: ${message}`
     };
+    profileCache.set(cleanUsername, { timestamp: Date.now(), result: errorResult });
+    return errorResult;
   }
 }

@@ -6,6 +6,9 @@ export interface User {
   createdAt: string;
   activePlanId?: string;
   customerAccess?: CustomerAccess;
+  isDemo?: boolean;
+  demoStatus?: 'active' | 'blocked' | 'expired';
+  demoRequestId?: string;
 }
 
 export interface MetaProfileData {
@@ -203,6 +206,7 @@ export interface Report {
   hotmartTransactionId?: string;
   createdAt: string;
   updatedAt: string;
+  executionMetrics?: ExecutionMetrics;
 }
 
 export interface PlanResourceLimits {
@@ -302,6 +306,35 @@ export interface ClientDiagnostic {
     success: boolean;
     error?: string;
   };
+}
+
+export interface ExecutionMetrics {
+  metaMs: number;
+  geminiMs: number;
+  synthesisMs: number;
+  dbMs: number;
+  totalMs: number;
+  fromCache?: boolean;
+  geminiModelUsed?: string;
+  modelUsed?: string;
+  isFallback?: boolean;
+}
+
+export interface DemoAccessRequest {
+  id: string;
+  name: string;
+  email: string;
+  planId: 'essencial';
+  status: 'Aguardando aprovação' | 'Aprovado' | 'Recusado' | 'Bloqueado' | 'Encerrado';
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  inviteToken?: string;
+  inviteExpiresAt?: string;
+  inviteUsedAt?: string;
+  activatedAt?: string;
+  userId?: string;
 }
 
 

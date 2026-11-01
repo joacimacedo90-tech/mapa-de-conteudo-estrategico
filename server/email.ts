@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { ClientDiagnostic } from '../src/types';
+import { ClientDiagnostic, DemoAccessRequest } from '../src/types';
 
 export interface EmailSendResult {
   success: boolean;
@@ -154,3 +154,168 @@ export async function sendClientDiagnosticEmail(
     };
   }
 }
+
+// 2. Notificação ao Administrador de nova solicitação de Demonstração do Plano Essencial
+export async function sendAdminDemoRequestNotification(demoRequest: DemoAccessRequest, adminEmail?: string): Promise<EmailSendResult> {
+  const check = isEmailConfigured();
+  if (!check.configured) {
+    return {
+      success: false,
+      configured: false,
+      missingConfig: check.missing,
+      message: 'SMTP não configurado. Notificação registrada no banco de dados e visível no painel administrativo.'
+    };
+  }
+
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const isSecure = process.env.SMTP_SECURE === 'true' || port === 465;
+
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port,
+    secure: isSecure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+
+  const fromAddress = process.env.SMTP_FROM || `"Mapa de Conteúdo" <${process.env.SMTP_USER}>`;
+  const targetAdmin = adminEmail || process.env.ADMIN_NOTIFY_EMAIL || process.env.SMTP_USER || '';
+
+  if (!targetAdmin) {
+    return {
+      success: false,
+      configured: true,
+      message: 'E-mail do administrador não informado para notificação.'
+    };
+  }
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #09090b; color: #f4f4f5; margin: 0; padding: 24px; }
+    .card { max-width: 540px; margin: 0 auto; background: #121216; border: 1px solid #27272a; border-radius: 16px; padding: 24px; }
+    .badge { display: inline-block; background: rgba(238, 73, 87, 0.15); color: #ee4957; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; margin-bottom: 12px; }
+    h2 { font-size: 18px; margin: 0 0 16px 0; color: #ffffff; }
+    .item { margin-bottom: 12px; font-size: 13px; line-height: 1.5; color: #a1a1aa; }
+    .item strong { color: #f4f4f5; }
+    .footer { font-size: 11px; color: #71717a; margin-top: 24px; border-top: 1px solid #27272a; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Demonstração • Plano Essencial</div>
+    <h2>Nova Solicitação de Demonstração Recebida</h2>
+    <div class="item"><strong>Nome do Interessado:</strong> ${demoRequest.name}</div>
+    <div class="item"><strong>E-mail:</strong> ${demoRequest.email}</div>
+    <div class="item"><strong>Data da Solicitação:</strong> ${new Date(demoRequest.createdAt).toLocaleString('pt-BR')}</div>
+    <div class="item"><strong>Status:</strong> Aguardando sua análise no painel administrativo.</div>
+    <div class="footer">
+      Acesse a aba <strong>"Testes do Plano Essencial"</strong> no seu Painel Administrativo para aprovar ou recusar este acesso.
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: fromAddress,
+      to: targetAdmin,
+      subject: `🔔 Nova Solicitação de Demonstração: ${demoRequest.name} (${demoRequest.email})`,
+      text: `Nova solicitação de teste do Plano Essencial recebida:\nNome: ${demoRequest.name}\nE-mail: ${demoRequest.email}\nAcesse o painel para aprovar.`,
+      html
+    });
+    return { success: true, configured: true, messageId: info.messageId, message: 'Notificação enviada ao administrador.' };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Falha no envio';
+    return { success: false, configured: true, message: `Erro ao notificar administrador: ${errorMsg}` };
+  }
+}
+
+// 3. Envio de Convite Seguro com Link de Ativação de Uso Único para o Cliente
+export async function sendDemoActivationEmail(demoRequest: DemoAccessRequest, activationUrl: string): Promise<EmailSendResult> {
+  const check = isEmailConfigured();
+  if (!check.configured) {
+    return {
+      success: false,
+      configured: false,
+      missingConfig: check.missing,
+      message: 'SMTP não configurado. Você pode copiar o link de ativação manualmente no painel administrativo.'
+    };
+  }
+
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const isSecure = process.env.SMTP_SECURE === 'true' || port === 465;
+
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port,
+    secure: isSecure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  });
+
+  const fromAddress = process.env.SMTP_FROM || `"Mapa de Conteúdo" <${process.env.SMTP_USER}>`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #09090b; color: #f4f4f5; margin: 0; padding: 24px; }
+    .card { max-width: 560px; margin: 0 auto; background: #121216; border: 1px solid #27272a; border-radius: 16px; padding: 28px; }
+    .badge { display: inline-block; background: rgba(238, 73, 87, 0.15); color: #ee4957; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; text-transform: uppercase; margin-bottom: 12px; }
+    h1 { font-size: 20px; margin: 0 0 16px 0; color: #ffffff; }
+    p { font-size: 13px; line-height: 1.6; color: #d4d4d8; margin: 0 0 16px 0; }
+    .btn { display: inline-block; background: #ee4957; color: #ffffff !important; text-decoration: none; font-size: 13px; font-weight: 700; padding: 12px 24px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0; }
+    .note { font-size: 11px; color: #a1a1aa; background: #18181b; padding: 12px; border-radius: 8px; border: 1px solid #27272a; margin-top: 20px; }
+    .footer { font-size: 11px; color: #71717a; margin-top: 24px; border-top: 1px solid #27272a; padding-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">Demonstração • Plano Essencial</div>
+    <h1>Seu Acesso de Teste foi Liberado!</h1>
+    <p>Olá, <strong>${demoRequest.name}</strong>!</p>
+    <p>Sua solicitação para testar o <strong>Plano Essencial</strong> do Mapa de Conteúdo Estratégico foi aprovada pelo nosso administrador.</p>
+    <p>Clique no botão abaixo para definir sua senha de acesso e ativar sua conta imediatamente:</p>
+    <div>
+      <a href="${activationUrl}" class="btn" target="_blank">Ativar Minha Conta de Teste</a>
+    </div>
+    <div class="note">
+      🔒 <strong>Informações Importantes:</strong><br>
+      • Este link é individual, de uso único e expira em 48 horas.<br>
+      • Não é necessário cartão de crédito e nenhuma cobrança será gerada.<br>
+      • Se preferir, cole este endereço no navegador: ${activationUrl}
+    </div>
+    <div class="footer">
+      © ${new Date().getFullYear()} Mapa de Conteúdo Estratégico. Todos os direitos reservados.
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: fromAddress,
+      to: `"${demoRequest.name}" <${demoRequest.email}>`,
+      subject: 'Seu acesso de demonstração ao Plano Essencial foi liberado!',
+      text: `Olá ${demoRequest.name}!\n\nSua demonstração gratuita do Plano Essencial foi aprovada.\nAtive sua conta e crie sua senha no link seguro:\n${activationUrl}\n\n(Válido por 48 horas).`,
+      html
+    });
+    return { success: true, configured: true, messageId: info.messageId, message: `Convite de demonstração enviado com sucesso para ${demoRequest.email}!` };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Falha no envio';
+    return { success: false, configured: true, message: `Erro ao enviar convite: ${errorMsg}` };
+  }
+}
+

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import { User, Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits, FreeAccessRequest, ClientDiagnostic } from '../src/types';
+import { User, Report, PricingPlan, AdminSettings, WebhookLog, CustomerAccess, PlanResourceLimits, FreeAccessRequest, ClientDiagnostic, DemoAccessRequest } from '../src/types';
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -18,6 +18,7 @@ interface DatabaseSchema {
   customerAccesses?: CustomerAccess[];
   freeAccessRequests?: FreeAccessRequest[];
   clientDiagnostics?: ClientDiagnostic[];
+  demoAccessRequests?: DemoAccessRequest[];
 }
 
 export const DEFAULT_PLANS: PricingPlan[] = [
@@ -148,6 +149,7 @@ function loadDatabase(): DatabaseSchema {
         if (!cache.customerAccesses) cache.customerAccesses = [];
         if (!cache.freeAccessRequests) cache.freeAccessRequests = [];
         if (!cache.clientDiagnostics) cache.clientDiagnostics = [];
+        if (!cache.demoAccessRequests) cache.demoAccessRequests = [];
         // Ensure 3 plans are present and properly structured with limits
         if (!cache.settings.plans || cache.settings.plans.length !== 3 || cache.settings.plans.some(p => p.id === 'vip' || !p.limits)) {
           cache.settings.plans = DEFAULT_PLANS;
@@ -179,7 +181,8 @@ function loadDatabase(): DatabaseSchema {
     webhookLogs: [],
     customerAccesses: [],
     freeAccessRequests: [],
-    clientDiagnostics: []
+    clientDiagnostics: [],
+    demoAccessRequests: []
   };
 
   saveDatabase(initialData);
@@ -730,6 +733,223 @@ export const db = {
       return true;
     }
     return false;
+  },
+
+  // ==========================================
+  // TESTES DO PLANO ESSENCIAL (DEMONSTRAÇÃO)
+  // ==========================================
+
+  createDemoAccessRequest(name: string, email: string): DemoAccessRequest {
+    const data = loadDatabase();
+    if (!data.demoAccessRequests) data.demoAccessRequests = [];
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+
+    // Check if there is already an active pending or approved request
+    const existing = data.demoAccessRequests.find(
+      (r) => r.email.toLowerCase() === cleanEmail && (r.status === 'Aguardando aprovação' || r.status === 'Aprovado')
+    );
+
+    if (existing && existing.status === 'Aguardando aprovação') {
+      return existing;
+    }
+
+    const newRequest: DemoAccessRequest = {
+      id: crypto.randomUUID(),
+      name: cleanName,
+      email: cleanEmail,
+      planId: 'essencial',
+      status: 'Aguardando aprovação',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    data.demoAccessRequests.unshift(newRequest);
+    saveDatabase(data);
+    return newRequest;
+  },
+
+  getAllDemoAccessRequests(): DemoAccessRequest[] {
+    const data = loadDatabase();
+    return data.demoAccessRequests || [];
+  },
+
+  getDemoAccessRequestById(id: string): DemoAccessRequest | undefined {
+    const data = loadDatabase();
+    return (data.demoAccessRequests || []).find((r) => r.id === id);
+  },
+
+  getDemoAccessRequestByToken(token: string): DemoAccessRequest | undefined {
+    const data = loadDatabase();
+    return (data.demoAccessRequests || []).find((r) => r.inviteToken === token);
+  },
+
+  approveDemoAccessRequest(id: string): { request: DemoAccessRequest; inviteToken: string } {
+    const data = loadDatabase();
+    if (!data.demoAccessRequests) data.demoAccessRequests = [];
+
+    const req = data.demoAccessRequests.find((r) => r.id === id);
+    if (!req) {
+      throw new Error('Solicitação de demonstração não encontrada');
+    }
+
+    const token = crypto.randomBytes(24).toString('hex');
+    req.status = 'Aprovado';
+    req.reviewedAt = new Date().toISOString();
+    req.inviteToken = token;
+    req.inviteExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    req.updatedAt = new Date().toISOString();
+
+    // If user already had an active account, re-activate demo
+    if (req.userId) {
+      const u = data.users.find((user) => user.id === req.userId);
+      if (u) {
+        u.isDemo = true;
+        u.demoStatus = 'active';
+        u.activePlanId = 'essencial';
+      }
+    }
+
+    saveDatabase(data);
+    return { request: req, inviteToken: token };
+  },
+
+  rejectDemoAccessRequest(id: string, reason?: string): DemoAccessRequest {
+    const data = loadDatabase();
+    if (!data.demoAccessRequests) data.demoAccessRequests = [];
+
+    const req = data.demoAccessRequests.find((r) => r.id === id);
+    if (!req) {
+      throw new Error('Solicitação de demonstração não encontrada');
+    }
+
+    req.status = 'Recusado';
+    req.reviewedAt = new Date().toISOString();
+    req.rejectionReason = reason || 'Solicitação de demonstração recusada pelo administrador.';
+    req.updatedAt = new Date().toISOString();
+
+    saveDatabase(data);
+    return req;
+  },
+
+  updateDemoAccessStatus(id: string, status: 'Aprovado' | 'Recusado' | 'Bloqueado' | 'Encerrado'): DemoAccessRequest {
+    const data = loadDatabase();
+    if (!data.demoAccessRequests) data.demoAccessRequests = [];
+
+    const req = data.demoAccessRequests.find((r) => r.id === id);
+    if (!req) {
+      throw new Error('Solicitação de demonstração não encontrada');
+    }
+
+    req.status = status;
+    req.updatedAt = new Date().toISOString();
+
+    if (req.userId) {
+      const u = data.users.find((user) => user.id === req.userId);
+      if (u) {
+        if (status === 'Bloqueado') {
+          u.demoStatus = 'blocked';
+        } else if (status === 'Encerrado') {
+          u.demoStatus = 'expired';
+        } else if (status === 'Aprovado') {
+          u.demoStatus = 'active';
+          u.activePlanId = 'essencial';
+        }
+      }
+    }
+
+    saveDatabase(data);
+    return req;
+  },
+
+  activateDemoAccessInvite(token: string, password: string): { user: User; request: DemoAccessRequest } {
+    const data = loadDatabase();
+    if (!data.demoAccessRequests) data.demoAccessRequests = [];
+
+    const req = data.demoAccessRequests.find((r) => r.inviteToken === token);
+    if (!req) {
+      throw new Error('Convite de demonstração inválido ou não encontrado.');
+    }
+
+    if (req.status !== 'Aprovado') {
+      throw new Error('Esta demonstração não está aprovada para ativação.');
+    }
+
+    if (req.inviteUsedAt) {
+      throw new Error('Este convite de demonstração já foi utilizado.');
+    }
+
+    if (req.inviteExpiresAt && new Date() > new Date(req.inviteExpiresAt)) {
+      throw new Error('O prazo de ativação deste convite expirou (48h). Solicite uma nova liberação.');
+    }
+
+    let existingUser = data.users.find((u) => u.email.toLowerCase() === req.email.toLowerCase());
+    if (existingUser) {
+      const { hash, salt } = hashPassword(password);
+      existingUser.passwordHash = hash;
+      existingUser.salt = salt;
+      existingUser.activePlanId = 'essencial';
+      existingUser.isDemo = true;
+      existingUser.demoStatus = 'active';
+      existingUser.demoRequestId = req.id;
+    } else {
+      const { hash, salt } = hashPassword(password);
+      const newUser = {
+        id: crypto.randomUUID(),
+        email: req.email.toLowerCase(),
+        name: req.name,
+        role: 'user' as const,
+        createdAt: new Date().toISOString(),
+        passwordHash: hash,
+        salt,
+        activePlanId: 'essencial',
+        isDemo: true,
+        demoStatus: 'active' as const,
+        demoRequestId: req.id
+      };
+      data.users.push(newUser);
+      existingUser = newUser;
+    }
+
+    req.inviteUsedAt = new Date().toISOString();
+    req.activatedAt = new Date().toISOString();
+    req.userId = existingUser.id;
+    req.updatedAt = new Date().toISOString();
+
+    saveDatabase(data);
+    const { passwordHash: _, salt: __, ...safeUser } = existingUser;
+    return { user: safeUser, request: req };
+  },
+
+  getDemoUsers(): User[] {
+    const data = loadDatabase();
+    return data.users
+      .filter((u) => u.isDemo)
+      .map(({ passwordHash: _, salt: __, ...safeUser }) => safeUser);
+  },
+
+  toggleUserDemoStatus(userId: string, newStatus: 'active' | 'blocked' | 'expired'): User {
+    const data = loadDatabase();
+    const user = data.users.find((u) => u.id === userId);
+    if (!user) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    user.demoStatus = newStatus;
+    if (user.demoRequestId && data.demoAccessRequests) {
+      const req = data.demoAccessRequests.find((r) => r.id === user.demoRequestId);
+      if (req) {
+        if (newStatus === 'active') req.status = 'Aprovado';
+        else if (newStatus === 'blocked') req.status = 'Bloqueado';
+        else if (newStatus === 'expired') req.status = 'Encerrado';
+        req.updatedAt = new Date().toISOString();
+      }
+    }
+
+    saveDatabase(data);
+    const { passwordHash: _, salt: __, ...safeUser } = user;
+    return safeUser;
   }
 };
 

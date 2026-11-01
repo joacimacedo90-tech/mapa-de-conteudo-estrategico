@@ -6,8 +6,8 @@ import { db } from './server/db';
 import { fetchInstagramProfileData } from './server/metaInstagram';
 import { generateContentMapStrategy } from './server/gemini';
 import { handleHotmartWebhook } from './server/hotmart';
-import { sendClientDiagnosticEmail, isEmailConfigured } from './server/email';
-import { Report, CalendarDay, ClientDiagnostic } from './src/types';
+import { sendClientDiagnosticEmail, isEmailConfigured, sendAdminDemoRequestNotification, sendDemoActivationEmail } from './server/email';
+import { Report, CalendarDay, ClientDiagnostic, DemoAccessRequest, ExecutionMetrics } from './src/types';
 
 dotenv.config();
 
@@ -63,6 +63,7 @@ app.get('/api/profile/meta-check', async (req: Request, res: Response) => {
 
 // Generate Analysis & Strategy (Gemini exclusively on backend)
 app.post('/api/reports/generate', async (req: Request, res: Response) => {
+  const tTotalStart = Date.now();
   try {
     const {
       username,
@@ -86,10 +87,24 @@ app.post('/api/reports/generate', async (req: Request, res: Response) => {
       });
     }
 
+    const authUser = getAuthUser(req);
+    if (authUser?.isDemo && authUser.demoStatus === 'blocked') {
+      return res.status(403).json({
+        error: 'Seu acesso de demonstração ao Plano Essencial foi bloqueado pelo administrador. Entre em contato com o suporte ou adquira um plano definitivo.'
+      });
+    }
+    if (authUser?.isDemo && authUser.demoStatus === 'expired') {
+      return res.status(403).json({
+        error: 'Seu período de teste do Plano Essencial foi encerrado. Adquira o Plano Essencial, PRO ou PREMIUM para continuar gerando e acessando seus relatórios.'
+      });
+    }
+
     const cleanUsername = username.replace(/^@/, '').trim();
 
-    // 1. Check Meta Instagram Business Discovery
+    // 1. Check Meta Instagram Business Discovery (Stage: instagram_fetch)
+    const tMetaStart = Date.now();
     const metaCheck = await fetchInstagramProfileData(cleanUsername);
+    const metaMs = Date.now() - tMetaStart;
 
     let metaApiStatus: 'connected' | 'not_configured' | 'manual_input' = 'not_configured';
     if (metaCheck.status === 'connected') {
@@ -100,7 +115,8 @@ app.post('/api/reports/generate', async (req: Request, res: Response) => {
       metaApiStatus = 'not_configured';
     }
 
-    // 2. Call Gemini server-side
+    // 2. Call Gemini server-side (Stage: gemini_api)
+    const tGeminiStart = Date.now();
     const strategy = await generateContentMapStrategy({
       username: cleanUsername,
       profession,
@@ -111,11 +127,29 @@ app.post('/api/reports/generate', async (req: Request, res: Response) => {
       manualCaptions,
       metaProfileData: metaCheck.data
     });
+    const geminiMs = Date.now() - tGeminiStart;
 
-    // 3. Save to database
+    // 3. Synthesis & normalization (Stage: synthesis)
+    const tSynthStart = Date.now();
     let user = userId ? db.getUserById(userId) : null;
-    const authUser = getAuthUser(req);
     if (authUser && !user) user = authUser;
+
+    const synthesisMs = Date.now() - tSynthStart;
+
+    // 4. Save to database (Stage: db_save)
+    const tDbStart = Date.now();
+    const totalMs = Date.now() - tTotalStart;
+
+    const executionMetrics: ExecutionMetrics = {
+      metaMs,
+      geminiMs,
+      synthesisMs,
+      dbMs: 0, // updated right below
+      totalMs,
+      fromCache: strategy.executionMetrics?.fromCache || false,
+      isFallback: strategy.executionMetrics?.isFallback || false,
+      modelUsed: strategy.executionMetrics?.modelUsed || 'gemini-2.5-flash'
+    };
 
     const report = db.createReport({
       userId: user?.id || null,
@@ -137,19 +171,28 @@ app.post('/api/reports/generate', async (req: Request, res: Response) => {
       carousels: strategy.carousels,
       stories: strategy.stories,
       hooksAndCtas: strategy.hooksAndCtas,
-      calendar: strategy.calendar
+      calendar: strategy.calendar,
+      executionMetrics
     });
 
-    // Return created report
+    const dbMs = Date.now() - tDbStart;
+    executionMetrics.dbMs = dbMs;
+    executionMetrics.totalMs = Date.now() - tTotalStart;
+
+    console.log(`[STAGE_TIMING] /api/reports/generate @${cleanUsername}: total=${executionMetrics.totalMs}ms (meta=${metaMs}ms, gemini=${geminiMs}ms, synth=${synthesisMs}ms, db=${dbMs}ms, fallback=${strategy.executionMetrics?.isFallback || false})`);
+
+    // Return created report with execution metrics
     res.json({
       success: true,
       reportId: report.id,
-      report
+      report,
+      executionMetrics
     });
   } catch (err: unknown) {
-    console.error('Error generating report:', err);
+    const elapsed = Date.now() - tTotalStart;
+    console.error(`Error generating report after ${elapsed}ms:`, err);
     const message = err instanceof Error ? err.message : 'Falha interna ao gerar análise.';
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: message, elapsedMs: elapsed });
   }
 });
 
@@ -262,6 +305,20 @@ function ensureReport90Days(report: Report): Report {
 
 // Get Specific Report
 app.get('/api/reports/:id', (req: Request, res: Response) => {
+  const authUser = getAuthUser(req);
+  if (authUser?.isDemo && authUser.demoStatus === 'blocked') {
+    return res.status(403).json({
+      error: 'Seu acesso de demonstração ao Plano Essencial foi bloqueado pelo administrador. Entre em contato com o suporte ou adquira um plano definitivo.',
+      isDemoBlocked: true
+    });
+  }
+  if (authUser?.isDemo && authUser.demoStatus === 'expired') {
+    return res.status(403).json({
+      error: 'Seu período de teste do Plano Essencial foi encerrado. Adquira o Plano Essencial, PRO ou PREMIUM para continuar acessando todos os seus relatórios.',
+      isDemoExpired: true
+    });
+  }
+
   const rawReport = db.getReportById(req.params.id);
   if (!rawReport) {
     return res.status(404).json({ error: 'Relatório não encontrado.' });
@@ -568,6 +625,115 @@ app.post('/api/free-access/activate', (req: Request, res: Response) => {
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Falha na ativação da conta';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// ==========================================
+// SOLICITAÇÃO & ATIVAÇÃO DE DEMONSTRAÇÃO DO PLANO ESSENCIAL
+// ==========================================
+
+// 1. Solicitar Demonstração do Plano Essencial (Público)
+app.post('/api/demo-access/request', async (req: Request, res: Response) => {
+  try {
+    const { name, email } = req.body;
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'O nome completo é obrigatório.' });
+    }
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ error: 'Um e-mail válido é obrigatório.' });
+    }
+
+    const cleanName = name.trim();
+    const cleanEmail = email.toLowerCase().trim();
+
+    // Check if user already exists
+    const existingUser = db.getUserByEmail(cleanEmail);
+    if (existingUser) {
+      return res.status(400).json({
+        error: 'Este e-mail já possui uma conta cadastrada no sistema. Faça login para acessar seus relatórios.'
+      });
+    }
+
+    const request = db.createDemoAccessRequest(cleanName, cleanEmail);
+
+    // Send notification email to the administrator (asynchronously, with error isolation)
+    try {
+      await sendAdminDemoRequestNotification(request);
+      console.log(`[NOTIFICAÇÃO ADMIN DEMO ENVIADA] Solicitação de teste recebida de: ${cleanName} (${cleanEmail})`);
+    } catch (notifErr) {
+      console.warn('[AVISO] Não foi possível enviar e-mail imediato ao administrador:', notifErr);
+    }
+
+    res.json({
+      success: true,
+      message: 'Solicitação recebida! Aguarde a liberação do seu acesso.',
+      request
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao registrar solicitação de demonstração';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// 2. Verificar validade do convite de demonstração do Plano Essencial
+app.get('/api/demo-access/verify-invite', (req: Request, res: Response) => {
+  const token = String(req.query.token || '').trim();
+  if (!token) {
+    return res.status(400).json({ valid: false, error: 'Token de convite não informado.' });
+  }
+
+  const request = db.getDemoAccessRequestByToken(token);
+  if (!request) {
+    return res.status(404).json({ valid: false, error: 'Convite de demonstração não encontrado ou link inválido.' });
+  }
+
+  if (request.status !== 'Aprovado') {
+    return res.status(400).json({ valid: false, error: 'Esta solicitação de demonstração ainda não foi aprovada pelo administrador.' });
+  }
+
+  if (request.inviteUsedAt) {
+    return res.status(400).json({ valid: false, error: 'Este convite de demonstração já foi utilizado para ativar uma conta.' });
+  }
+
+  if (request.inviteExpiresAt && new Date() > new Date(request.inviteExpiresAt)) {
+    return res.status(400).json({ valid: false, error: 'Este convite expirou (validade de 48 horas excedida). Solicite uma nova liberação.' });
+  }
+
+  res.json({
+    valid: true,
+    name: request.name,
+    email: request.email,
+    planId: 'essencial',
+    planName: 'Plano Essencial (Demonstração)',
+    expiresAt: request.inviteExpiresAt
+  });
+});
+
+// 3. Ativar conta de demonstração do Plano Essencial através do convite
+app.post('/api/demo-access/activate', (req: Request, res: Response) => {
+  try {
+    const { token, password, lgpdConsent } = req.body;
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: 'Token de convite obrigatório.' });
+    }
+    if (!password || typeof password !== 'string' || password.length < 6) {
+      return res.status(400).json({ error: 'A senha deve ter no mínimo 6 caracteres.' });
+    }
+    if (!lgpdConsent) {
+      return res.status(400).json({ error: 'O consentimento com a LGPD é obrigatório.' });
+    }
+
+    const result = db.activateDemoAccessInvite(token.trim(), password);
+
+    res.json({
+      success: true,
+      message: 'Conta ativada com sucesso! Seu acesso de demonstração ao Plano Essencial está liberado.',
+      token: result.user.id,
+      user: result.user
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Falha na ativação da conta de demonstração';
     res.status(400).json({ error: msg });
   }
 });
@@ -938,6 +1104,119 @@ app.post('/api/admin/free-access-requests/:id/reject', requireAdmin, (req: Reque
 });
 
 // ==========================================
+// ADMIN: TESTES DO PLANO ESSENCIAL (DEMONSTRAÇÃO)
+// ==========================================
+
+// Admin: List all Demo Access Requests
+app.get('/api/admin/demo-access-requests', requireAdmin, (_req: Request, res: Response) => {
+  const requests = db.getAllDemoAccessRequests();
+  res.json({ requests });
+});
+
+// Admin: Approve a Demo Access Request and generate one-time invite (48h)
+app.post('/api/admin/demo-access-requests/:id/approve', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = db.approveDemoAccessRequest(id);
+
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    const inviteUrl = `${baseUrl}/?page=ativar-conta&type=demo&token=${result.inviteToken}`;
+
+    // Send single-use activation email to the client
+    let emailStatus = 'sent';
+    try {
+      await sendDemoActivationEmail(result.request, inviteUrl);
+      console.log(`[E-MAIL CONVITE DEMO ENVIADO] Para: ${result.request.email} | URL: ${inviteUrl}`);
+    } catch (emailErr) {
+      console.warn('[AVISO] Falha ao enviar e-mail de ativação:', emailErr);
+      emailStatus = 'failed_to_deliver';
+    }
+
+    res.json({
+      success: true,
+      message: `Demonstração do Plano Essencial aprovada para ${result.request.name}! Link seguro de uso único gerado com validade de 48 horas.`,
+      request: result.request,
+      inviteUrl,
+      inviteToken: result.inviteToken,
+      emailStatus
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao aprovar solicitação de demonstração';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// Admin: Reject a Demo Access Request
+app.post('/api/admin/demo-access-requests/:id/reject', requireAdmin, (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const request = db.rejectDemoAccessRequest(id, reason);
+
+    res.json({
+      success: true,
+      message: `Solicitação de demonstração de ${request.name} recusada.`,
+      request
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao recusar solicitação de demonstração';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// Admin: Update status of a Demo Access Request (e.g. 'Aprovado', 'Recusado', 'Bloqueado', 'Encerrado')
+app.post('/api/admin/demo-access-requests/:id/status', requireAdmin, (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['Aguardando aprovação', 'Aprovado', 'Recusado', 'Bloqueado', 'Encerrado'].includes(status)) {
+      return res.status(400).json({ error: 'Status de teste inválido.' });
+    }
+    const request = db.updateDemoAccessStatus(id, status);
+
+    res.json({
+      success: true,
+      message: `Status do teste atualizado para "${status}".`,
+      request
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao atualizar status do teste';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// Admin: List Demo Users (distinct from paying clients)
+app.get('/api/admin/demo-users', requireAdmin, (_req: Request, res: Response) => {
+  const demoUsers = db.getDemoUsers();
+  res.json({ demoUsers });
+});
+
+// Admin: Block / Reactivate / Expire demo access for a user
+app.post('/api/admin/demo-users/:id/toggle', requireAdmin, (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['active', 'blocked', 'expired'].includes(status)) {
+      return res.status(400).json({ error: 'Situação de teste inválida (active, blocked, expired).' });
+    }
+    const user = db.toggleUserDemoStatus(id, status);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário de demonstração não encontrado.' });
+    }
+
+    const label = status === 'active' ? 'Reativado' : status === 'blocked' ? 'Bloqueado' : 'Encerrado';
+    res.json({
+      success: true,
+      message: `Acesso de demonstração do usuário ${user.name} definido como ${label}.`,
+      user
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao alterar situação do usuário de demonstração';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// ==========================================
 // ADMIN: GERAR DIAGNÓSTICO PARA CLIENTE
 // ==========================================
 
@@ -966,6 +1245,7 @@ app.get('/api/admin/client-diagnostics', requireAdmin, (_req: Request, res: Resp
 
 // Admin: Generate strategic diagnostic for client
 app.post('/api/admin/client-diagnostics/generate', requireAdmin, async (req: Request, res: Response) => {
+  const tTotalStart = Date.now();
   try {
     const {
       clientName,
@@ -989,10 +1269,13 @@ app.post('/api/admin/client-diagnostics/generate', requireAdmin, async (req: Req
 
     const cleanUsername = instagramUsername.replace(/^@/, '').trim();
 
-    // 1. Check Meta Instagram Business Discovery
+    // 1. Check Meta Instagram Business Discovery (Stage: instagram_fetch)
+    const tMetaStart = Date.now();
     const metaCheck = await fetchInstagramProfileData(cleanUsername);
+    const metaMs = Date.now() - tMetaStart;
 
-    // 2. Call Gemini server-side using existing generateContentMapStrategy
+    // 2. Call Gemini server-side (Stage: gemini_api)
+    const tGeminiStart = Date.now();
     const strategy = await generateContentMapStrategy({
       username: cleanUsername,
       profession: profession?.trim() || 'Não informado',
@@ -1001,8 +1284,10 @@ app.post('/api/admin/client-diagnostics/generate', requireAdmin, async (req: Req
       objective: objective?.trim() || 'Atrair seguidores compradores e aumentar autoridade',
       metaProfileData: metaCheck.data
     });
+    const geminiMs = Date.now() - tGeminiStart;
 
-    // 3. Assemble complete unlocked report
+    // 3. Assemble complete unlocked report (Stage: synthesis)
+    const tSynthStart = Date.now();
     const rawReport: Report = {
       id: crypto.randomUUID(),
       userId: null,
@@ -1034,8 +1319,23 @@ app.post('/api/admin/client-diagnostics/generate', requireAdmin, async (req: Req
     };
 
     const fullReport = ensureReport90Days(rawReport);
+    const synthesisMs = Date.now() - tSynthStart;
 
-    // Save client diagnostic in database
+    // 4. Save client diagnostic in database (Stage: db_save)
+    const tDbStart = Date.now();
+    const executionMetrics: ExecutionMetrics = {
+      metaMs,
+      geminiMs,
+      synthesisMs,
+      dbMs: 0,
+      totalMs: 0,
+      fromCache: strategy.executionMetrics?.fromCache || false,
+      isFallback: strategy.executionMetrics?.isFallback || false,
+      modelUsed: strategy.executionMetrics?.modelUsed || 'gemini-2.5-flash'
+    };
+
+    fullReport.executionMetrics = executionMetrics;
+
     const diagnostic = db.createClientDiagnostic({
       clientName: clientName.trim(),
       clientEmail: clientEmail.trim().toLowerCase(),
@@ -1047,16 +1347,24 @@ app.post('/api/admin/client-diagnostics/generate', requireAdmin, async (req: Req
       reportData: fullReport
     });
 
+    const dbMs = Date.now() - tDbStart;
+    executionMetrics.dbMs = dbMs;
+    executionMetrics.totalMs = Date.now() - tTotalStart;
+
+    console.log(`[STAGE_TIMING] /api/admin/client-diagnostics/generate @${cleanUsername}: total=${executionMetrics.totalMs}ms (meta=${metaMs}ms, gemini=${geminiMs}ms, synth=${synthesisMs}ms, db=${dbMs}ms, fallback=${strategy.executionMetrics?.isFallback || false})`);
+
     // Note: Do NOT send email automatically. A separate button "Enviar Diagnóstico por E-mail" triggers delivery.
     res.json({
       success: true,
       message: 'Diagnóstico estratégico para o cliente gerado com sucesso! Visualize a prévia e clique em "Enviar Diagnóstico por E-mail" quando desejar.',
-      diagnostic
+      diagnostic,
+      executionMetrics
     });
   } catch (err: unknown) {
-    console.error('Error generating client diagnostic:', err);
+    const elapsed = Date.now() - tTotalStart;
+    console.error(`Error generating client diagnostic after ${elapsed}ms:`, err);
     const message = err instanceof Error ? err.message : 'Falha interna ao gerar diagnóstico estratégico para cliente.';
-    res.status(500).json({ error: message });
+    res.status(500).json({ error: message, elapsedMs: elapsed });
   }
 });
 

@@ -8,9 +8,2379 @@
       "createdAt": "2026-10-30T22:28:44.533Z",
       "passwordHash": "dc7713f79269063d4b2259048309a01a975d9fc9ef64389b0ad7f4a3b7cd085fd1edccc4309bbf153ddd88c0f267ebeeaa6c90969888e614a91ebd4ce962bf80",
       "salt": "b1a51acf24d0a48f1dceba38f6bb8510"
+    },
+    {
+      "id": "0e939ea3-aece-49e9-95eb-ed9bafcdf5ca",
+      "email": "mariana.teste.1793542611199@teste.com",
+      "name": "Mariana Souza",
+      "role": "user",
+      "createdAt": "2026-11-01T14:16:51.235Z",
+      "passwordHash": "25a79648153abb0cd8b788577fc6f160cd151c56bb8e0996c71a39c1e0aaa6c3add467c57a50a3cf14b7cefdd697291eab0efc7c0b8ff1b1341c89cd4e4149a0",
+      "salt": "966cc5322792d71788bd8fd0cc236321",
+      "activePlanId": "essencial",
+      "isDemo": true,
+      "demoStatus": "active",
+      "demoRequestId": "abc9d66c-99b8-4445-81ad-aedfbbeee922"
     }
   ],
   "reports": [
+    {
+      "userId": "0e939ea3-aece-49e9-95eb-ed9bafcdf5ca",
+      "userEmail": "mariana.teste.1793542611199@teste.com",
+      "username": "mariana.teste",
+      "profession": "Nutricionista Funcional",
+      "niche": "Saúde da Mulher",
+      "product": "Consulta Nutricional",
+      "objective": "Atrair seguidores compradores",
+      "metaApiStatus": "not_configured",
+      "manualData": {
+        "bio": "",
+        "recentCaptions": ""
+      },
+      "diagnosis": {
+        "overallScore": 81,
+        "bioAnalysis": {
+          "currentStatus": "Posicionamento no segmento de Saúde da Mulher com alto potencial reprimido de conversão.",
+          "strengths": [
+            "Tema central definido para Saúde da Mulher",
+            "Compatibilidade natural com a dor de compradores qualificados"
+          ],
+          "weaknesses": [
+            "Falta de gancho de retenção nos primeiros 3 segundos dos Reels",
+            "Chamadas para ação que não convidam ativamente para conversa privada no Direct"
+          ],
+          "suggestedBio": "🎯 Transformo clientes com Consulta Nutricional\n🚀 Estratégia comprovada para Saúde da Mulher\n👇 Toque no link abaixo e receba seu plano personalizado:"
+        },
+        "targetAudience": {
+          "profile": "Profissionais e pessoas interessadas em Saúde da Mulher que buscam Atrair seguidores compradores",
+          "deepPains": [
+            "Falta de constância e direção clara no nicho de Saúde da Mulher",
+            "Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas",
+            "Dificuldade de transformar seguidores curiosos em clientes pagantes"
+          ],
+          "coreDesires": [
+            "Atrair clientes qualificados pelo Instagram com previsibilidade",
+            "Ser referência de confiança no segmento de Saúde da Mulher",
+            "Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo"
+          ],
+          "buyingObjections": [
+            "\"Não tenho tempo suficiente para aplicar\"",
+            "\"Será que funciona especificamente para o meu caso?\"",
+            "\"Já testei outros métodos e não tive resultado\""
+          ]
+        },
+        "strategicPillars": [
+          {
+            "name": "Autoridade e Domínio",
+            "description": "Conteúdos que provam competência técnica",
+            "percentage": 30
+          },
+          {
+            "name": "Conexão e Bastidores",
+            "description": "Valores, vulnerabilidade e identificação humana",
+            "percentage": 25
+          },
+          {
+            "name": "Educação Prática",
+            "description": "Tutoriais simples resolvendo dores pontuais",
+            "percentage": 25
+          },
+          {
+            "name": "Conversão e Venda Direta",
+            "description": "Ofertas para atendimento e fechamento na DM",
+            "percentage": 20
+          }
+        ],
+        "growthOpportunities": [
+          "Ativação de funil de vendas diário via Stories com caixas e enquetes direcionando para a DM",
+          "Gravação de Reels com quebra de padrão visual e gancho verbal nos primeiros 3 segundos",
+          "Publicação de carrosséis de salvamento focados em checklists e guias práticos"
+        ],
+        "competitiveEdge": "Abordagem humanizada e foco na transformação real do cliente através de Consulta Nutricional",
+        "growthProjection": {
+          "baselineStatus": "Estimativa calculada para o nicho de @mariana.teste",
+          "conservative": {
+            "level": "conservative",
+            "name": "Cenário Conservador",
+            "frequency": "3 a 4 posts por semana",
+            "projectedFollowersMin": 1200,
+            "projectedFollowersMax": 2500,
+            "projectedFollowersRange": "+1.200 a +2.500 novos seguidores",
+            "estimatedReachRange": "25.000 a 60.000 contas alcançadas",
+            "estimatedDmMessages": "20 a 50 contatos de vendas no Direct",
+            "keyStrategy": "Constância semanal sem pausas longas e Reels com ganchos claros."
+          },
+          "realistic": {
+            "level": "realistic",
+            "name": "Cenário Recomendado / Realista",
+            "frequency": "5 a 6 posts por semana com Reels otimizados",
+            "projectedFollowersMin": 3500,
+            "projectedFollowersMax": 7500,
+            "projectedFollowersRange": "+3.500 a +7.500 novos seguidores",
+            "estimatedReachRange": "80.000 a 180.000 contas alcançadas",
+            "estimatedDmMessages": "80 a 160 conversas qualificadas no Direct",
+            "keyStrategy": "Ganchos visuais nos primeiros 3s, carrosséis de salvamento e Reels de topo de funil.",
+            "highlight": true
+          },
+          "accelerated": {
+            "level": "accelerated",
+            "name": "Cenário Acelerado / Alta Performance",
+            "frequency": "Diário (7x/semana + 10-15 Stories/dia + collabs)",
+            "projectedFollowersMin": 8000,
+            "projectedFollowersMax": 18000,
+            "projectedFollowersRange": "+8.000 a +18.000 novos seguidores",
+            "estimatedReachRange": "220.000 a 550.000 contas alcançadas",
+            "estimatedDmMessages": "200 a 450 contatos qualificados no Direct",
+            "keyStrategy": "Reels virais com temas em alta, quebra de padrão, parcerias e amplificação estratégica."
+          },
+          "keyGrowthLevers": [
+            "Otimização de ganchos de retenção nos primeiros 3 segundos dos Reels",
+            "Carrosséis densos estruturados para gerar salvamentos e compartilhamentos",
+            "Sequências diárias de Stories com caixas e enquetes direcionando para a DM",
+            "Posicionamento claro na bio convertendo visitantes em seguidores e leads"
+          ],
+          "leadConversionEstimate": "Estimativa de 50 a 180 clientes potenciais chamando no Direct ao longo dos 90 dias.",
+          "integrityDisclaimer": "Projeções estatísticas baseadas na média de tração orgânica do algoritmo do Instagram para perfis consistentes no nicho."
+        },
+        "powerPreview": {
+          "currentPowerScore": 39,
+          "maxPowerScore": 93,
+          "untappedPotentialPercentage": 54,
+          "powerStatusLabel": "Potência Parcial com Fugas Críticas de Atenção",
+          "estimatedMonthlyLostReach": "35.000 a 110.000 contas únicas",
+          "estimatedLostLeads": "20 a 50 clientes potenciais no Direct",
+          "powerPillars": [
+            {
+              "name": "Potência de Descoberta & Reels (Atração Orgânica)",
+              "currentPercentage": 35,
+              "potentialPercentage": 92,
+              "diagnosis": "Falta de quebra de padrão visual e gancho verbal nos primeiros 3s limita a entrega do algoritmo.",
+              "unlockedWith": "10 Roteiros de Reels Prontos com Ganchos Hipnóticos"
+            },
+            {
+              "name": "Potência de Retenção & Carrosséis (Autoridade)",
+              "currentPercentage": 41,
+              "potentialPercentage": 95,
+              "diagnosis": "Postagens estáticas sem divisão estratégica de slides têm baixa taxa de salvamento e compartilhamento.",
+              "unlockedWith": "10 Carrosséis Estruturados Slide a Slide"
+            },
+            {
+              "name": "Potência de Conversão & Stories (Vendas no Direct)",
+              "currentPercentage": 29,
+              "potentialPercentage": 90,
+              "diagnosis": "Stories aleatórios sem caixas de perguntas estratégicas nem funil de vendas para a DM.",
+              "unlockedWith": "10 Sequências de Stories de Alta Conversão"
+            },
+            {
+              "name": "Potência de Consistência & Algoritmo (90 Dias)",
+              "currentPercentage": 21,
+              "potentialPercentage": 98,
+              "diagnosis": "Inconstância de postagem confunde o algoritmo do Instagram e reduz o alcance das postagens.",
+              "unlockedWith": "Calendário Editorial Estratégico de 90 Dias"
+            }
+          ],
+          "powerLeaks": [
+            {
+              "title": "Bio com Dispersão de Visitantes",
+              "leakDescription": "Visitantes que chegam pelo tráfego ou Reels não entendem em 3 segundos o que você faz e saem sem seguir.",
+              "impactLevel": "Crítica",
+              "unlockedSolution": "Aplicar a Bio Magnética com posicionamento claro, autoridade e chamada de 1 clique."
+            },
+            {
+              "title": "Vídeos sem Quebra nos Primeiros 3 Segundos",
+              "leakDescription": "Falta de gancho visual de impacto imediato causa queda drástica de retenção antes de 3 segundos.",
+              "impactLevel": "Crítica",
+              "unlockedSolution": "Usar ganchos visuais de movimento, texto dinâmico e gancho verbal nos primeiros 3s."
+            },
+            {
+              "title": "Ausência de Funil de Vendas na DM",
+              "leakDescription": "Publicações que ensinam e informam, mas terminam sem nenhuma chamada específica para atendimento privado.",
+              "impactLevel": "Alta",
+              "unlockedSolution": "Ganchos com palavras-chave nos comentários para puxar o seguidor para conversa privada."
+            }
+          ],
+          "quickWinAction": "Copie a Bio Magnética sugerida para @mariana.teste e aplique o gancho do Reel #1 nas próximas 24 horas para destravar tração."
+        }
+      },
+      "contentIdeas": [
+        {
+          "id": 1,
+          "title": "O maior erro que afasta clientes no nicho de Saúde da Mulher",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "goal": "Atrair seguidores compradores",
+          "hook": "Se você faz isso no seu Instagram, pare agora...",
+          "captionIdea": "Explique a virada de chave para Saúde da Mulher.",
+          "cta": "Comente \"PLANO\" para receber o direcionamento."
+        },
+        {
+          "id": 2,
+          "title": "Passo a passo definitivo para destravar resultados",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "goal": "Gerar salvamentos e autoridade",
+          "hook": "Guarde este carrossel antes de criar seu próximo post...",
+          "captionIdea": "Checklist dos 4 passos essenciais.",
+          "cta": "Salve para consultar durante a semana."
+        },
+        {
+          "id": 3,
+          "title": "3 sinais de que você está pronto para o próximo nível [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Conversão / Venda",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "Se você se identifica com o sinal #2...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 4,
+          "title": "O bastidor que quase ninguém tem coragem de mostrar [Foco: Consulta Nutricional]",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "goal": "Superar a dor (Falta de constância e direção clara no nicho de Saúde da Mulher) e direcionar para (Atrair clientes qualificados pelo Instagram com previsibilidade)",
+          "hook": "A verdade sobre a nossa rotina...",
+          "captionIdea": "Aborde como resolver Falta de constância e direção clara no nicho de Saúde da Mulher de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 5,
+          "title": "O passo a passo para sair do zero neste tema [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "goal": "Superar a dor (Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas) e direcionar para (Ser referência de confiança no segmento de Saúde da Mulher)",
+          "hook": "Guarde este roteiro simples de 4 passos...",
+          "captionIdea": "Aborde como resolver Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 6,
+          "title": "Por que a maioria desiste antes de ver o resultado [Foco: Consulta Nutricional]",
+          "format": "Post Estático",
+          "pillar": "Conexão",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "O erro psicológico mais comum no nicho...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 7,
+          "title": "A diferença entre quem tem resultado e quem só tenta [Foco: Consulta Nutricional]",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "goal": "Superar a dor (Falta de constância e direção clara no nicho de Saúde da Mulher) e direcionar para (Atrair clientes qualificados pelo Instagram com previsibilidade)",
+          "hook": "Preste atenção nisso se você quer crescer...",
+          "captionIdea": "Aborde como resolver Falta de constância e direção clara no nicho de Saúde da Mulher de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 8,
+          "title": "Checklist definitivo para aplicar ainda hoje [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "goal": "Superar a dor (Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas) e direcionar para (Ser referência de confiança no segmento de Saúde da Mulher)",
+          "hook": "Print dessa tela para usar nos seus próximos dias...",
+          "captionIdea": "Aborde como resolver Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 9,
+          "title": "Oferta direta com condição especial para direct [Foco: Consulta Nutricional]",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "Abri 3 vagas exclusivas para atendimento...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 10,
+          "title": "Pergunta polarizadora: Qual o seu maior gargalo? [Foco: Consulta Nutricional]",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "goal": "Superar a dor (Falta de constância e direção clara no nicho de Saúde da Mulher) e direcionar para (Atrair clientes qualificados pelo Instagram com previsibilidade)",
+          "hook": "Preciso da sua opinião sincera sobre isso...",
+          "captionIdea": "Aborde como resolver Falta de constância e direção clara no nicho de Saúde da Mulher de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 11,
+          "title": "O maior mito que contam sobre este nicho [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "goal": "Superar a dor (Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas) e direcionar para (Ser referência de confiança no segmento de Saúde da Mulher)",
+          "hook": "Se te disseram isso, mentiram pra você...",
+          "captionIdea": "Aborde como resolver Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 12,
+          "title": "Estudo de caso real: Como destravar resultados [Foco: Consulta Nutricional]",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "Veja exatamente o que mudou neste processo...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 13,
+          "title": "3 sinais de que você está pronto para o próximo nível [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Conversão / Venda",
+          "goal": "Superar a dor (Falta de constância e direção clara no nicho de Saúde da Mulher) e direcionar para (Atrair clientes qualificados pelo Instagram com previsibilidade)",
+          "hook": "Se você se identifica com o sinal #2...",
+          "captionIdea": "Aborde como resolver Falta de constância e direção clara no nicho de Saúde da Mulher de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 14,
+          "title": "O bastidor que quase ninguém tem coragem de mostrar [Foco: Consulta Nutricional]",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "goal": "Superar a dor (Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas) e direcionar para (Ser referência de confiança no segmento de Saúde da Mulher)",
+          "hook": "A verdade sobre a nossa rotina...",
+          "captionIdea": "Aborde como resolver Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 15,
+          "title": "O passo a passo para sair do zero neste tema [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "Guarde este roteiro simples de 4 passos...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 16,
+          "title": "Por que a maioria desiste antes de ver o resultado [Foco: Consulta Nutricional]",
+          "format": "Post Estático",
+          "pillar": "Conexão",
+          "goal": "Superar a dor (Falta de constância e direção clara no nicho de Saúde da Mulher) e direcionar para (Atrair clientes qualificados pelo Instagram com previsibilidade)",
+          "hook": "O erro psicológico mais comum no nicho...",
+          "captionIdea": "Aborde como resolver Falta de constância e direção clara no nicho de Saúde da Mulher de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 17,
+          "title": "A diferença entre quem tem resultado e quem só tenta [Foco: Consulta Nutricional]",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "goal": "Superar a dor (Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas) e direcionar para (Ser referência de confiança no segmento de Saúde da Mulher)",
+          "hook": "Preste atenção nisso se você quer crescer...",
+          "captionIdea": "Aborde como resolver Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 18,
+          "title": "Checklist definitivo para aplicar ainda hoje [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "Print dessa tela para usar nos seus próximos dias...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 19,
+          "title": "Oferta direta com condição especial para direct [Foco: Consulta Nutricional]",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "goal": "Superar a dor (Falta de constância e direção clara no nicho de Saúde da Mulher) e direcionar para (Atrair clientes qualificados pelo Instagram com previsibilidade)",
+          "hook": "Abri 3 vagas exclusivas para atendimento...",
+          "captionIdea": "Aborde como resolver Falta de constância e direção clara no nicho de Saúde da Mulher de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 20,
+          "title": "Pergunta polarizadora: Qual o seu maior gargalo? [Foco: Consulta Nutricional]",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "goal": "Superar a dor (Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas) e direcionar para (Ser referência de confiança no segmento de Saúde da Mulher)",
+          "hook": "Preciso da sua opinião sincera sobre isso...",
+          "captionIdea": "Aborde como resolver Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 21,
+          "title": "O maior mito que contam sobre este nicho [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "Se te disseram isso, mentiram pra você...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 22,
+          "title": "Estudo de caso real: Como destravar resultados [Foco: Consulta Nutricional]",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "goal": "Superar a dor (Falta de constância e direção clara no nicho de Saúde da Mulher) e direcionar para (Atrair clientes qualificados pelo Instagram com previsibilidade)",
+          "hook": "Veja exatamente o que mudou neste processo...",
+          "captionIdea": "Aborde como resolver Falta de constância e direção clara no nicho de Saúde da Mulher de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 23,
+          "title": "3 sinais de que você está pronto para o próximo nível [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Conversão / Venda",
+          "goal": "Superar a dor (Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas) e direcionar para (Ser referência de confiança no segmento de Saúde da Mulher)",
+          "hook": "Se você se identifica com o sinal #2...",
+          "captionIdea": "Aborde como resolver Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 24,
+          "title": "O bastidor que quase ninguém tem coragem de mostrar [Foco: Consulta Nutricional]",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "A verdade sobre a nossa rotina...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 25,
+          "title": "O passo a passo para sair do zero neste tema [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "goal": "Superar a dor (Falta de constância e direção clara no nicho de Saúde da Mulher) e direcionar para (Atrair clientes qualificados pelo Instagram com previsibilidade)",
+          "hook": "Guarde este roteiro simples de 4 passos...",
+          "captionIdea": "Aborde como resolver Falta de constância e direção clara no nicho de Saúde da Mulher de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 26,
+          "title": "Por que a maioria desiste antes de ver o resultado [Foco: Consulta Nutricional]",
+          "format": "Post Estático",
+          "pillar": "Conexão",
+          "goal": "Superar a dor (Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas) e direcionar para (Ser referência de confiança no segmento de Saúde da Mulher)",
+          "hook": "O erro psicológico mais comum no nicho...",
+          "captionIdea": "Aborde como resolver Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 27,
+          "title": "A diferença entre quem tem resultado e quem só tenta [Foco: Consulta Nutricional]",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "Preste atenção nisso se você quer crescer...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 28,
+          "title": "Checklist definitivo para aplicar ainda hoje [Foco: Consulta Nutricional]",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "goal": "Superar a dor (Falta de constância e direção clara no nicho de Saúde da Mulher) e direcionar para (Atrair clientes qualificados pelo Instagram com previsibilidade)",
+          "hook": "Print dessa tela para usar nos seus próximos dias...",
+          "captionIdea": "Aborde como resolver Falta de constância e direção clara no nicho de Saúde da Mulher de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 29,
+          "title": "Oferta direta com condição especial para direct [Foco: Consulta Nutricional]",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "goal": "Superar a dor (Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas) e direcionar para (Ser referência de confiança no segmento de Saúde da Mulher)",
+          "hook": "Abri 3 vagas exclusivas para atendimento...",
+          "captionIdea": "Aborde como resolver Sensação de trabalhar muito criando conteúdo sem retorno proporcional em vendas de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        },
+        {
+          "id": 30,
+          "title": "Pergunta polarizadora: Qual o seu maior gargalo? [Foco: Consulta Nutricional]",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "goal": "Superar a dor (Dificuldade de transformar seguidores curiosos em clientes pagantes) e direcionar para (Aumentar o faturamento mensal sem precisar produzir conteúdo o dia todo)",
+          "hook": "Preciso da sua opinião sincera sobre isso...",
+          "captionIdea": "Aborde como resolver Dificuldade de transformar seguidores curiosos em clientes pagantes de forma simples e conecte diretamente com a solução de @mariana.teste.",
+          "cta": "Envie uma mensagem no Direct para receber o direcionamento completo!"
+        }
+      ],
+      "reels": [
+        {
+          "id": 1,
+          "theme": "Roteiro Topo de Funil: A verdade sobre Saúde da Mulher",
+          "hookVisual": "Apontando para a tela com expressão séria e texto em destaque",
+          "hookVerbal": "A verdade que quase ninguém tem coragem de falar sobre esse nicho...",
+          "body": [
+            "Erro clássico",
+            "O ajuste simples que muda tudo",
+            "Como aplicar hoje mesmo"
+          ],
+          "cta": "Comente \"QUERO\" para receber a continuação na DM.",
+          "audioStyle": "Fala dinâmica direta para a câmera",
+          "durationSeconds": "35s"
+        },
+        {
+          "id": 2,
+          "theme": "Passo a Passo Rápido: O método de 3 etapas (Consulta Nutricional)",
+          "hookVisual": "Escrevendo em um caderno ou apontando para os 3 passos na tela",
+          "hookVerbal": "Você só precisa dessas 3 coisas para destravar resultados consistentes...",
+          "body": [
+            "Etapa 1: Definição clara do posicionamento magnético",
+            "Etapa 2: Cronograma com ganchos de alta retenção",
+            "Etapa 3: Chamada direcionada para atendimento no Direct"
+          ],
+          "cta": "Salve este Reel para consultar quando for produzir seus posts.",
+          "audioStyle": "Áudio dinâmico em alta com fala ritmada",
+          "durationSeconds": "35 a 45s"
+        },
+        {
+          "id": 3,
+          "theme": "História de Transformação: Do zero aos primeiros clientes (Consulta Nutricional)",
+          "hookVisual": "Caminhando em direção à câmera em um ambiente iluminado",
+          "hookVerbal": "Há algum tempo eu me sentia exatamente como você se sente hoje...",
+          "body": [
+            "A frustração de postar sem ter retorno nem mensagens",
+            "A virada de chave ao aplicar uma estratégia profissional",
+            "O resultado alcançado e como você pode replicar"
+          ],
+          "cta": "Se você quer viver essa virada, me chame no Direct com a palavra \"VIRADA\".",
+          "audioStyle": "Música inspiradora de fundo com narração empática",
+          "durationSeconds": "35 a 45s"
+        },
+        {
+          "id": 4,
+          "theme": "Comparativo Cirúrgico: Amador vs Profissional (Consulta Nutricional)",
+          "hookVisual": "Divisão de tela ou mostrando dois caminhos na mão",
+          "hookVerbal": "Essa é a diferença real entre um perfil que só tem seguidor e um que tem clientes...",
+          "body": [
+            "O amador posta sem objetivo e espera um milagre",
+            "O profissional cria conteúdo com funil de retenção e vendas",
+            "Qual dos dois caminhos você está seguindo hoje?"
+          ],
+          "cta": "Deixe sua opinião nos comentários: amador ou profissional?",
+          "audioStyle": "Som de transição rápida entre os dois comparativos",
+          "durationSeconds": "35 a 45s"
+        },
+        {
+          "id": 5,
+          "theme": "Aviso Urgente: Mudança no algoritmo que afeta seu nicho (Consulta Nutricional)",
+          "hookVisual": "Entrando rápido em cena segurando o celular",
+          "hookVerbal": "Preste muita atenção se você quer continuar crescendo nos próximos meses...",
+          "body": [
+            "O algoritmo agora prioriza salvamentos e conversas iniciadas na DM",
+            "Como usar isso a seu favor nas próximas postagens",
+            "O que você nunca deve deixar de colocar na legenda"
+          ],
+          "cta": "Compartilhe este vídeo com alguém que também precisa desse aviso urgente!",
+          "audioStyle": "Batida com suspense e clareza de áudio",
+          "durationSeconds": "35 a 45s"
+        },
+        {
+          "id": 6,
+          "theme": "Desafio Prático de 24 Horas (Consulta Nutricional)",
+          "hookVisual": "Cronômetro ou contagem regressiva na tela",
+          "hookVerbal": "Eu te desafio a aplicar isso nas próximas 24 horas e me contar o resultado...",
+          "body": [
+            "Troque sua bio para a promessa de transformação",
+            "Faça um post com o gancho de curiosidade sugerido",
+            "Abra a caixa de perguntas estratégica nos Stories"
+          ],
+          "cta": "Topa o desafio? Comente \"ACEITO\" nos comentários!",
+          "audioStyle": "Música acelerada e empolgante",
+          "durationSeconds": "35 a 45s"
+        },
+        {
+          "id": 7,
+          "theme": "Quebra de Padrão: Pare de fazer isso no seu nicho (Consulta Nutricional)",
+          "hookVisual": "Olhar sério para a câmera apontando o dedo com texto vermelho na tela",
+          "hookVerbal": "Se você faz isso no seu perfil, pare imediatamente antes de perder mais dinheiro...",
+          "body": [
+            "Explicação do erro clássico que 90% das pessoas cometem",
+            "O motivo pelo qual o algoritmo desfavorece essa abordagem",
+            "O ajuste simples que muda tudo em 24 horas"
+          ],
+          "cta": "Comente \"AJUDA\" que eu te envio o modelo correto no Direct.",
+          "audioStyle": "Voz direta sem música alta, cortes rápidos a cada 2.5s",
+          "durationSeconds": "35 a 45s"
+        },
+        {
+          "id": 8,
+          "theme": "Passo a Passo Rápido: O método de 3 etapas (Consulta Nutricional)",
+          "hookVisual": "Escrevendo em um caderno ou apontando para os 3 passos na tela",
+          "hookVerbal": "Você só precisa dessas 3 coisas para destravar resultados consistentes...",
+          "body": [
+            "Etapa 1: Definição clara do posicionamento magnético",
+            "Etapa 2: Cronograma com ganchos de alta retenção",
+            "Etapa 3: Chamada direcionada para atendimento no Direct"
+          ],
+          "cta": "Salve este Reel para consultar quando for produzir seus posts.",
+          "audioStyle": "Áudio dinâmico em alta com fala ritmada",
+          "durationSeconds": "35 a 45s"
+        },
+        {
+          "id": 9,
+          "theme": "História de Transformação: Do zero aos primeiros clientes (Consulta Nutricional)",
+          "hookVisual": "Caminhando em direção à câmera em um ambiente iluminado",
+          "hookVerbal": "Há algum tempo eu me sentia exatamente como você se sente hoje...",
+          "body": [
+            "A frustração de postar sem ter retorno nem mensagens",
+            "A virada de chave ao aplicar uma estratégia profissional",
+            "O resultado alcançado e como você pode replicar"
+          ],
+          "cta": "Se você quer viver essa virada, me chame no Direct com a palavra \"VIRADA\".",
+          "audioStyle": "Música inspiradora de fundo com narração empática",
+          "durationSeconds": "35 a 45s"
+        },
+        {
+          "id": 10,
+          "theme": "Comparativo Cirúrgico: Amador vs Profissional (Consulta Nutricional)",
+          "hookVisual": "Divisão de tela ou mostrando dois caminhos na mão",
+          "hookVerbal": "Essa é a diferença real entre um perfil que só tem seguidor e um que tem clientes...",
+          "body": [
+            "O amador posta sem objetivo e espera um milagre",
+            "O profissional cria conteúdo com funil de retenção e vendas",
+            "Qual dos dois caminhos você está seguindo hoje?"
+          ],
+          "cta": "Deixe sua opinião nos comentários: amador ou profissional?",
+          "audioStyle": "Som de transição rápida entre os dois comparativos",
+          "durationSeconds": "35 a 45s"
+        }
+      ],
+      "carousels": [
+        {
+          "id": 1,
+          "title": "Guia Rápido de Saúde da Mulher",
+          "coverHeadline": "O GUIA DEFINITIVO PARA DESTRAVAR RESULTADOS EM SAÚDE DA MULHER",
+          "targetPainOrDesire": "Falta de clareza e esforço sem retorno",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "Capa Magnética",
+              "content": "Deslize para ver o passo a passo.",
+              "visualNote": "Fundo escuro"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Passo 1: Clareza",
+              "content": "Defina a quem você atende.",
+              "visualNote": "Destaque visual"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Passo 2: Gancho",
+              "content": "Capte a atenção em 3 segundos.",
+              "visualNote": "Checklist"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Passo 3: Oferta",
+              "content": "Chame para o Direct.",
+              "visualNote": "Seta"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Conclusão",
+              "content": "Salve e aplique.",
+              "visualNote": "Ícone salvar"
+            }
+          ],
+          "finalCta": "Salve para não esquecer e compartilhe!"
+        },
+        {
+          "id": 2,
+          "title": "Os 4 Maiores Erros que Afastam Clientes (#2)",
+          "coverHeadline": "4 ERROS QUE ESTÃO SILENCIANDO SEU DIRECT",
+          "targetPainOrDesire": "Postar sem retorno e direct vazio",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "ESTÁ COMETENDO ESSES ERROS?",
+              "content": "Se o seu direct está vazio, o motivo está nestes 4 slides.",
+              "visualNote": "Headline com texto vermelho de alerta"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Erro #1: Bio Genérica",
+              "content": "Não deixar claro em 3 segundos o que você resolve.",
+              "visualNote": "Comparativo antes e depois"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Erro #2: Posts sem CTA",
+              "content": "Ensinar muito mas nunca convidar o leitor para a conversa privada.",
+              "visualNote": "Exemplo de CTA que converte"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Erro #3: Inconstância",
+              "content": "Postar 3 dias e sumir 1 semana desregulando o algoritmo.",
+              "visualNote": "Gráfico descendente de alcance"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Como Corrigir Tudo Isso",
+              "content": "Aplique o Mapa de Conteúdo e tenha clareza nos próximos 90 dias.",
+              "visualNote": "Chamada para direct"
+            }
+          ],
+          "finalCta": "Envie uma mensagem no Direct para receber a correção da sua bio!"
+        },
+        {
+          "id": 3,
+          "title": "Guia Definitivo: Como resolver o principal obstáculo (#3)",
+          "coverHeadline": "O GUIA PRÁTICO PARA NUNCA MAIS TRAVAR NISSO",
+          "targetPainOrDesire": "Falta de método estruturado e tempo perdido",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "O GUIA PRÁTICO",
+              "content": "Deslize para aprender o método em 4 passos simples.",
+              "visualNote": "Capa impactante com fundo escuro e título em destaque"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Passo 1: Clareza",
+              "content": "Defina exatamente quem você quer atrair antes de criar qualquer post.",
+              "visualNote": "Card visual com caixa de destaque"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Passo 2: Gancho Forte",
+              "content": "Gaste 50% do seu tempo na headline da capa para garantir o clique.",
+              "visualNote": "Exemplo prático de headline magnética"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Passo 3: Entrega Cirúrgica",
+              "content": "Entregue o valor prometido de forma concisa e sem enrolação.",
+              "visualNote": "Checklist visual com ícones"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Passo 4: Chamada de Ação",
+              "content": "Salve este carrossel e comente sua maior dúvida abaixo.",
+              "visualNote": "Seta grande apontando para o botão salvar"
+            }
+          ],
+          "finalCta": "Salve para não esquecer e compartilhe com um parceiro!"
+        },
+        {
+          "id": 4,
+          "title": "Os 4 Maiores Erros que Afastam Clientes (#4)",
+          "coverHeadline": "4 ERROS QUE ESTÃO SILENCIANDO SEU DIRECT",
+          "targetPainOrDesire": "Postar sem retorno e direct vazio",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "ESTÁ COMETENDO ESSES ERROS?",
+              "content": "Se o seu direct está vazio, o motivo está nestes 4 slides.",
+              "visualNote": "Headline com texto vermelho de alerta"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Erro #1: Bio Genérica",
+              "content": "Não deixar claro em 3 segundos o que você resolve.",
+              "visualNote": "Comparativo antes e depois"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Erro #2: Posts sem CTA",
+              "content": "Ensinar muito mas nunca convidar o leitor para a conversa privada.",
+              "visualNote": "Exemplo de CTA que converte"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Erro #3: Inconstância",
+              "content": "Postar 3 dias e sumir 1 semana desregulando o algoritmo.",
+              "visualNote": "Gráfico descendente de alcance"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Como Corrigir Tudo Isso",
+              "content": "Aplique o Mapa de Conteúdo e tenha clareza nos próximos 90 dias.",
+              "visualNote": "Chamada para direct"
+            }
+          ],
+          "finalCta": "Envie uma mensagem no Direct para receber a correção da sua bio!"
+        },
+        {
+          "id": 5,
+          "title": "Guia Definitivo: Como resolver o principal obstáculo (#5)",
+          "coverHeadline": "O GUIA PRÁTICO PARA NUNCA MAIS TRAVAR NISSO",
+          "targetPainOrDesire": "Falta de método estruturado e tempo perdido",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "O GUIA PRÁTICO",
+              "content": "Deslize para aprender o método em 4 passos simples.",
+              "visualNote": "Capa impactante com fundo escuro e título em destaque"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Passo 1: Clareza",
+              "content": "Defina exatamente quem você quer atrair antes de criar qualquer post.",
+              "visualNote": "Card visual com caixa de destaque"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Passo 2: Gancho Forte",
+              "content": "Gaste 50% do seu tempo na headline da capa para garantir o clique.",
+              "visualNote": "Exemplo prático de headline magnética"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Passo 3: Entrega Cirúrgica",
+              "content": "Entregue o valor prometido de forma concisa e sem enrolação.",
+              "visualNote": "Checklist visual com ícones"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Passo 4: Chamada de Ação",
+              "content": "Salve este carrossel e comente sua maior dúvida abaixo.",
+              "visualNote": "Seta grande apontando para o botão salvar"
+            }
+          ],
+          "finalCta": "Salve para não esquecer e compartilhe com um parceiro!"
+        },
+        {
+          "id": 6,
+          "title": "Os 4 Maiores Erros que Afastam Clientes (#6)",
+          "coverHeadline": "4 ERROS QUE ESTÃO SILENCIANDO SEU DIRECT",
+          "targetPainOrDesire": "Postar sem retorno e direct vazio",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "ESTÁ COMETENDO ESSES ERROS?",
+              "content": "Se o seu direct está vazio, o motivo está nestes 4 slides.",
+              "visualNote": "Headline com texto vermelho de alerta"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Erro #1: Bio Genérica",
+              "content": "Não deixar claro em 3 segundos o que você resolve.",
+              "visualNote": "Comparativo antes e depois"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Erro #2: Posts sem CTA",
+              "content": "Ensinar muito mas nunca convidar o leitor para a conversa privada.",
+              "visualNote": "Exemplo de CTA que converte"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Erro #3: Inconstância",
+              "content": "Postar 3 dias e sumir 1 semana desregulando o algoritmo.",
+              "visualNote": "Gráfico descendente de alcance"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Como Corrigir Tudo Isso",
+              "content": "Aplique o Mapa de Conteúdo e tenha clareza nos próximos 90 dias.",
+              "visualNote": "Chamada para direct"
+            }
+          ],
+          "finalCta": "Envie uma mensagem no Direct para receber a correção da sua bio!"
+        },
+        {
+          "id": 7,
+          "title": "Guia Definitivo: Como resolver o principal obstáculo (#7)",
+          "coverHeadline": "O GUIA PRÁTICO PARA NUNCA MAIS TRAVAR NISSO",
+          "targetPainOrDesire": "Falta de método estruturado e tempo perdido",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "O GUIA PRÁTICO",
+              "content": "Deslize para aprender o método em 4 passos simples.",
+              "visualNote": "Capa impactante com fundo escuro e título em destaque"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Passo 1: Clareza",
+              "content": "Defina exatamente quem você quer atrair antes de criar qualquer post.",
+              "visualNote": "Card visual com caixa de destaque"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Passo 2: Gancho Forte",
+              "content": "Gaste 50% do seu tempo na headline da capa para garantir o clique.",
+              "visualNote": "Exemplo prático de headline magnética"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Passo 3: Entrega Cirúrgica",
+              "content": "Entregue o valor prometido de forma concisa e sem enrolação.",
+              "visualNote": "Checklist visual com ícones"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Passo 4: Chamada de Ação",
+              "content": "Salve este carrossel e comente sua maior dúvida abaixo.",
+              "visualNote": "Seta grande apontando para o botão salvar"
+            }
+          ],
+          "finalCta": "Salve para não esquecer e compartilhe com um parceiro!"
+        },
+        {
+          "id": 8,
+          "title": "Os 4 Maiores Erros que Afastam Clientes (#8)",
+          "coverHeadline": "4 ERROS QUE ESTÃO SILENCIANDO SEU DIRECT",
+          "targetPainOrDesire": "Postar sem retorno e direct vazio",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "ESTÁ COMETENDO ESSES ERROS?",
+              "content": "Se o seu direct está vazio, o motivo está nestes 4 slides.",
+              "visualNote": "Headline com texto vermelho de alerta"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Erro #1: Bio Genérica",
+              "content": "Não deixar claro em 3 segundos o que você resolve.",
+              "visualNote": "Comparativo antes e depois"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Erro #2: Posts sem CTA",
+              "content": "Ensinar muito mas nunca convidar o leitor para a conversa privada.",
+              "visualNote": "Exemplo de CTA que converte"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Erro #3: Inconstância",
+              "content": "Postar 3 dias e sumir 1 semana desregulando o algoritmo.",
+              "visualNote": "Gráfico descendente de alcance"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Como Corrigir Tudo Isso",
+              "content": "Aplique o Mapa de Conteúdo e tenha clareza nos próximos 90 dias.",
+              "visualNote": "Chamada para direct"
+            }
+          ],
+          "finalCta": "Envie uma mensagem no Direct para receber a correção da sua bio!"
+        },
+        {
+          "id": 9,
+          "title": "Guia Definitivo: Como resolver o principal obstáculo (#9)",
+          "coverHeadline": "O GUIA PRÁTICO PARA NUNCA MAIS TRAVAR NISSO",
+          "targetPainOrDesire": "Falta de método estruturado e tempo perdido",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "O GUIA PRÁTICO",
+              "content": "Deslize para aprender o método em 4 passos simples.",
+              "visualNote": "Capa impactante com fundo escuro e título em destaque"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Passo 1: Clareza",
+              "content": "Defina exatamente quem você quer atrair antes de criar qualquer post.",
+              "visualNote": "Card visual com caixa de destaque"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Passo 2: Gancho Forte",
+              "content": "Gaste 50% do seu tempo na headline da capa para garantir o clique.",
+              "visualNote": "Exemplo prático de headline magnética"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Passo 3: Entrega Cirúrgica",
+              "content": "Entregue o valor prometido de forma concisa e sem enrolação.",
+              "visualNote": "Checklist visual com ícones"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Passo 4: Chamada de Ação",
+              "content": "Salve este carrossel e comente sua maior dúvida abaixo.",
+              "visualNote": "Seta grande apontando para o botão salvar"
+            }
+          ],
+          "finalCta": "Salve para não esquecer e compartilhe com um parceiro!"
+        },
+        {
+          "id": 10,
+          "title": "Os 4 Maiores Erros que Afastam Clientes (#10)",
+          "coverHeadline": "4 ERROS QUE ESTÃO SILENCIANDO SEU DIRECT",
+          "targetPainOrDesire": "Postar sem retorno e direct vazio",
+          "slides": [
+            {
+              "slideNumber": 1,
+              "headline": "ESTÁ COMETENDO ESSES ERROS?",
+              "content": "Se o seu direct está vazio, o motivo está nestes 4 slides.",
+              "visualNote": "Headline com texto vermelho de alerta"
+            },
+            {
+              "slideNumber": 2,
+              "headline": "Erro #1: Bio Genérica",
+              "content": "Não deixar claro em 3 segundos o que você resolve.",
+              "visualNote": "Comparativo antes e depois"
+            },
+            {
+              "slideNumber": 3,
+              "headline": "Erro #2: Posts sem CTA",
+              "content": "Ensinar muito mas nunca convidar o leitor para a conversa privada.",
+              "visualNote": "Exemplo de CTA que converte"
+            },
+            {
+              "slideNumber": 4,
+              "headline": "Erro #3: Inconstância",
+              "content": "Postar 3 dias e sumir 1 semana desregulando o algoritmo.",
+              "visualNote": "Gráfico descendente de alcance"
+            },
+            {
+              "slideNumber": 5,
+              "headline": "Como Corrigir Tudo Isso",
+              "content": "Aplique o Mapa de Conteúdo e tenha clareza nos próximos 90 dias.",
+              "visualNote": "Chamada para direct"
+            }
+          ],
+          "finalCta": "Envie uma mensagem no Direct para receber a correção da sua bio!"
+        }
+      ],
+      "stories": [
+        {
+          "id": 1,
+          "theme": "Aquecimento para Conversão na DM",
+          "objective": "Gerar conversas de vendas",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Enquete",
+              "content": "Você sente que o seu perfil poderia render muito mais?",
+              "stickerOrInteractive": "Enquete Sim/Não"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "A maioria comete o erro de postar sem funil.",
+              "stickerOrInteractive": "Vídeo selfie"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "Mostrando o planejamento de 90 dias.",
+              "stickerOrInteractive": "Foto do calendário"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Mande \"QUERO\" no direct para saber mais.",
+              "stickerOrInteractive": "Botão de resposta"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "theme": "Caixa de Perguntas Estratégica com Quebra de Objeções (#2)",
+          "objective": "Responder dúvidas e provar autoridade no nicho",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Caixa de Perguntas",
+              "content": "Qual o seu maior obstáculo hoje para fechar mais clientes no Instagram?",
+              "stickerOrInteractive": "Caixinha de perguntas aberta"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "Respondendo a pergunta mais frequente: \"Não tenho tempo para criar posts todo dia\".",
+              "stickerOrInteractive": "Vídeo desmistificando o mito"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "Com o cronograma trimestral pronto de 90 dias, você gasta apenas 2 horas na semana para planejar tudo.",
+              "stickerOrInteractive": "Print da tela do calendário"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Me envie uma mensagem no direct para eu te mostrar como funciona o acesso.",
+              "stickerOrInteractive": "Link ou palavra-chave para direct"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "theme": "Funil de Aquecimento com Enquete e Direct (#3)",
+          "objective": "Gerar conversas quentes de vendas na DM",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Enquete",
+              "content": "Você sente que o seu perfil poderia estar gerando muito mais clientes?",
+              "stickerOrInteractive": "Enquete: Sim, com certeza / Não, já vendo muito"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "A maioria das pessoas com quem converso tem a mesma queixa: produzem muito conteúdo mas não veem retorno financeiro.",
+              "stickerOrInteractive": "Vídeo selfie curto e natural"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "O segredo não é postar mais, e sim ter um funil direcionado que conduz o visitante até a conversa privada.",
+              "stickerOrInteractive": "Print ou foto de anotações da estratégia"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Vou liberar 3 análises gratuitas no Direct para quem responder aqui com \"QUERO\".",
+              "stickerOrInteractive": "Botão de resposta rápida para a DM"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "theme": "Caixa de Perguntas Estratégica com Quebra de Objeções (#4)",
+          "objective": "Responder dúvidas e provar autoridade no nicho",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Caixa de Perguntas",
+              "content": "Qual o seu maior obstáculo hoje para fechar mais clientes no Instagram?",
+              "stickerOrInteractive": "Caixinha de perguntas aberta"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "Respondendo a pergunta mais frequente: \"Não tenho tempo para criar posts todo dia\".",
+              "stickerOrInteractive": "Vídeo desmistificando o mito"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "Com o cronograma trimestral pronto de 90 dias, você gasta apenas 2 horas na semana para planejar tudo.",
+              "stickerOrInteractive": "Print da tela do calendário"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Me envie uma mensagem no direct para eu te mostrar como funciona o acesso.",
+              "stickerOrInteractive": "Link ou palavra-chave para direct"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "theme": "Funil de Aquecimento com Enquete e Direct (#5)",
+          "objective": "Gerar conversas quentes de vendas na DM",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Enquete",
+              "content": "Você sente que o seu perfil poderia estar gerando muito mais clientes?",
+              "stickerOrInteractive": "Enquete: Sim, com certeza / Não, já vendo muito"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "A maioria das pessoas com quem converso tem a mesma queixa: produzem muito conteúdo mas não veem retorno financeiro.",
+              "stickerOrInteractive": "Vídeo selfie curto e natural"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "O segredo não é postar mais, e sim ter um funil direcionado que conduz o visitante até a conversa privada.",
+              "stickerOrInteractive": "Print ou foto de anotações da estratégia"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Vou liberar 3 análises gratuitas no Direct para quem responder aqui com \"QUERO\".",
+              "stickerOrInteractive": "Botão de resposta rápida para a DM"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "theme": "Caixa de Perguntas Estratégica com Quebra de Objeções (#6)",
+          "objective": "Responder dúvidas e provar autoridade no nicho",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Caixa de Perguntas",
+              "content": "Qual o seu maior obstáculo hoje para fechar mais clientes no Instagram?",
+              "stickerOrInteractive": "Caixinha de perguntas aberta"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "Respondendo a pergunta mais frequente: \"Não tenho tempo para criar posts todo dia\".",
+              "stickerOrInteractive": "Vídeo desmistificando o mito"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "Com o cronograma trimestral pronto de 90 dias, você gasta apenas 2 horas na semana para planejar tudo.",
+              "stickerOrInteractive": "Print da tela do calendário"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Me envie uma mensagem no direct para eu te mostrar como funciona o acesso.",
+              "stickerOrInteractive": "Link ou palavra-chave para direct"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "theme": "Funil de Aquecimento com Enquete e Direct (#7)",
+          "objective": "Gerar conversas quentes de vendas na DM",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Enquete",
+              "content": "Você sente que o seu perfil poderia estar gerando muito mais clientes?",
+              "stickerOrInteractive": "Enquete: Sim, com certeza / Não, já vendo muito"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "A maioria das pessoas com quem converso tem a mesma queixa: produzem muito conteúdo mas não veem retorno financeiro.",
+              "stickerOrInteractive": "Vídeo selfie curto e natural"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "O segredo não é postar mais, e sim ter um funil direcionado que conduz o visitante até a conversa privada.",
+              "stickerOrInteractive": "Print ou foto de anotações da estratégia"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Vou liberar 3 análises gratuitas no Direct para quem responder aqui com \"QUERO\".",
+              "stickerOrInteractive": "Botão de resposta rápida para a DM"
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "theme": "Caixa de Perguntas Estratégica com Quebra de Objeções (#8)",
+          "objective": "Responder dúvidas e provar autoridade no nicho",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Caixa de Perguntas",
+              "content": "Qual o seu maior obstáculo hoje para fechar mais clientes no Instagram?",
+              "stickerOrInteractive": "Caixinha de perguntas aberta"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "Respondendo a pergunta mais frequente: \"Não tenho tempo para criar posts todo dia\".",
+              "stickerOrInteractive": "Vídeo desmistificando o mito"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "Com o cronograma trimestral pronto de 90 dias, você gasta apenas 2 horas na semana para planejar tudo.",
+              "stickerOrInteractive": "Print da tela do calendário"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Me envie uma mensagem no direct para eu te mostrar como funciona o acesso.",
+              "stickerOrInteractive": "Link ou palavra-chave para direct"
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "theme": "Funil de Aquecimento com Enquete e Direct (#9)",
+          "objective": "Gerar conversas quentes de vendas na DM",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Enquete",
+              "content": "Você sente que o seu perfil poderia estar gerando muito mais clientes?",
+              "stickerOrInteractive": "Enquete: Sim, com certeza / Não, já vendo muito"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "A maioria das pessoas com quem converso tem a mesma queixa: produzem muito conteúdo mas não veem retorno financeiro.",
+              "stickerOrInteractive": "Vídeo selfie curto e natural"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "O segredo não é postar mais, e sim ter um funil direcionado que conduz o visitante até a conversa privada.",
+              "stickerOrInteractive": "Print ou foto de anotações da estratégia"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Vou liberar 3 análises gratuitas no Direct para quem responder aqui com \"QUERO\".",
+              "stickerOrInteractive": "Botão de resposta rápida para a DM"
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "theme": "Caixa de Perguntas Estratégica com Quebra de Objeções (#10)",
+          "objective": "Responder dúvidas e provar autoridade no nicho",
+          "stories": [
+            {
+              "order": 1,
+              "type": "Caixa de Perguntas",
+              "content": "Qual o seu maior obstáculo hoje para fechar mais clientes no Instagram?",
+              "stickerOrInteractive": "Caixinha de perguntas aberta"
+            },
+            {
+              "order": 2,
+              "type": "Opinião / Quebra",
+              "content": "Respondendo a pergunta mais frequente: \"Não tenho tempo para criar posts todo dia\".",
+              "stickerOrInteractive": "Vídeo desmistificando o mito"
+            },
+            {
+              "order": 3,
+              "type": "Bastidor",
+              "content": "Com o cronograma trimestral pronto de 90 dias, você gasta apenas 2 horas na semana para planejar tudo.",
+              "stickerOrInteractive": "Print da tela do calendário"
+            },
+            {
+              "order": 4,
+              "type": "Chamada Direct (DM)",
+              "content": "Me envie uma mensagem no direct para eu te mostrar como funciona o acesso.",
+              "stickerOrInteractive": "Link ou palavra-chave para direct"
+            }
+          ]
+        }
+      ],
+      "hooksAndCtas": {
+        "curiosityHooks": [
+          "Você comete esse erro sem perceber?",
+          "O segredo que ninguém revela",
+          "Por que quase todo mundo falha nisso?"
+        ],
+        "painHooks": [
+          "Cansado de postar todo dia e não vender nada?",
+          "A sensação de ver perfis menores faturando mais"
+        ],
+        "authorityHooks": [
+          "O método validado que gerou clientes reais",
+          "Análise de quem vive dos resultados do nicho"
+        ],
+        "commentCtas": [
+          "Comente \"MAPA\" que te envio o direcionamento no direct",
+          "Deixe sua opinião nos comentários"
+        ],
+        "directMessageCtas": [
+          "Envie \"PLANO\" no Direct para conversarmos",
+          "Me chame na DM para receber as condições"
+        ],
+        "captionTemplates": []
+      },
+      "calendar": [
+        {
+          "day": 1,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 2,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Conexão",
+          "theme": "Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 3,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 4,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "theme": "Sequência de bastidores: como resolver a dor do cliente sem complicação",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 5,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Autoridade",
+          "theme": "Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 6,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 7,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Educação",
+          "theme": "Sequência de bastidores: como resolver a dor do cliente sem complicação",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 8,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Conversão / Venda",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 9,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Autoridade",
+          "theme": "Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 10,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 11,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Educação",
+          "theme": "Sequência de bastidores: como resolver a dor do cliente sem complicação",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 12,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Conversão / Venda",
+          "theme": "Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 13,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 14,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "theme": "Sequência de bastidores: como resolver a dor do cliente sem complicação",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 15,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 16,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Conversão / Venda",
+          "theme": "Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 17,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 18,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "theme": "Sequência de bastidores: como resolver a dor do cliente sem complicação",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 19,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "theme": "Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 20,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Conversão / Venda",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 21,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Autoridade",
+          "theme": "Sequência de bastidores: como resolver a dor do cliente sem complicação",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 22,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 23,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "theme": "Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 24,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Conversão / Venda",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 25,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Autoridade",
+          "theme": "Sequência de bastidores: como resolver a dor do cliente sem complicação",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 26,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Conexão",
+          "theme": "Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 27,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 28,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "theme": "Sequência de bastidores: como resolver a dor do cliente sem complicação",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 29,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Topo de Funil: O erro número 1 que bloqueia clientes no nicho de @mariana.teste",
+          "hook": "Pare de cometer esse erro se você quer resultados de verdade...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 30,
+          "month": 1,
+          "phase": "Mês 1 - Fundação & Atração Magnética",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Conexão",
+          "theme": "Passo a passo prático para destravar os primeiros resultados sem cometer erros clássicos",
+          "hook": "Guarde este post antes que você esqueça o método...",
+          "cta": "Salve este conteúdo para consultar durante a semana e compartilhe!"
+        },
+        {
+          "day": 31,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 32,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "theme": "Perguntas e Respostas estratégicas: Quebrando as 3 principais objeções",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 33,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Autoridade",
+          "theme": "Estudo de caso ou quebra de mito: A verdade revelada sobre o nicho",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 34,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 35,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Educação",
+          "theme": "Perguntas e Respostas estratégicas: Quebrando as 3 principais objeções",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 36,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Conversão / Venda",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 37,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Autoridade",
+          "theme": "Estudo de caso ou quebra de mito: A verdade revelada sobre o nicho",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 38,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 39,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Educação",
+          "theme": "Perguntas e Respostas estratégicas: Quebrando as 3 principais objeções",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 40,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Conversão / Venda",
+          "theme": "Estudo de caso ou quebra de mito: A verdade revelada sobre o nicho",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 41,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 42,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "theme": "Perguntas e Respostas estratégicas: Quebrando as 3 principais objeções",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 43,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 44,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Conversão / Venda",
+          "theme": "Estudo de caso ou quebra de mito: A verdade revelada sobre o nicho",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 45,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 46,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "theme": "Perguntas e Respostas estratégicas: Quebrando as 3 principais objeções",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 47,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "theme": "Estudo de caso ou quebra de mito: A verdade revelada sobre o nicho",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 48,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Conversão / Venda",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 49,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Autoridade",
+          "theme": "Perguntas e Respostas estratégicas: Quebrando as 3 principais objeções",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 50,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 51,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "theme": "Estudo de caso ou quebra de mito: A verdade revelada sobre o nicho",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 52,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Conversão / Venda",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 53,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Autoridade",
+          "theme": "Perguntas e Respostas estratégicas: Quebrando as 3 principais objeções",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 54,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Conexão",
+          "theme": "Estudo de caso ou quebra de mito: A verdade revelada sobre o nicho",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 55,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 56,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "theme": "Perguntas e Respostas estratégicas: Quebrando as 3 principais objeções",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 57,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 58,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Conexão",
+          "theme": "Estudo de caso ou quebra de mito: A verdade revelada sobre o nicho",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 59,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Autoridade: O método validado para alcançar a transformação desejada",
+          "hook": "A verdade nua e crua sobre o que realmente funciona...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 60,
+          "month": 2,
+          "phase": "Mês 2 - Autoridade & Conexão Profunda",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "theme": "Perguntas e Respostas estratégicas: Quebrando as 3 principais objeções",
+          "hook": "Se você pudesse mudar apenas 1 coisa no seu processo hoje...",
+          "cta": "Deixe sua opinião nos comentários: você já passou por isso?"
+        },
+        {
+          "day": 61,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Autoridade",
+          "theme": "Comparativo direto: Fazer sozinho vs Fazer com acompanhamento profissional",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 62,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 63,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Educação",
+          "theme": "Abertura de vagas/agenda: Como garantir o seu direcionamento ainda esta semana",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 64,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Conversão / Venda",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 65,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Autoridade",
+          "theme": "Comparativo direto: Fazer sozinho vs Fazer com acompanhamento profissional",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 66,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 67,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Educação",
+          "theme": "Abertura de vagas/agenda: Como garantir o seu direcionamento ainda esta semana",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 68,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Conversão / Venda",
+          "theme": "Comparativo direto: Fazer sozinho vs Fazer com acompanhamento profissional",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 69,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 70,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "theme": "Abertura de vagas/agenda: Como garantir o seu direcionamento ainda esta semana",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 71,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 72,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Conversão / Venda",
+          "theme": "Comparativo direto: Fazer sozinho vs Fazer com acompanhamento profissional",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 73,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 74,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Conexão",
+          "theme": "Abertura de vagas/agenda: Como garantir o seu direcionamento ainda esta semana",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 75,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "theme": "Comparativo direto: Fazer sozinho vs Fazer com acompanhamento profissional",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 76,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Conversão / Venda",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 77,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Autoridade",
+          "theme": "Abertura de vagas/agenda: Como garantir o seu direcionamento ainda esta semana",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 78,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 79,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Educação",
+          "theme": "Comparativo direto: Fazer sozinho vs Fazer com acompanhamento profissional",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 80,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Conversão / Venda",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 81,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Autoridade",
+          "theme": "Abertura de vagas/agenda: Como garantir o seu direcionamento ainda esta semana",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 82,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Conexão",
+          "theme": "Comparativo direto: Fazer sozinho vs Fazer com acompanhamento profissional",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 83,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 84,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Domingo",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "theme": "Abertura de vagas/agenda: Como garantir o seu direcionamento ainda esta semana",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 85,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Segunda-feira",
+          "format": "Reels",
+          "pillar": "Autoridade",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 86,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Terça-feira",
+          "format": "Carrossel",
+          "pillar": "Conexão",
+          "theme": "Comparativo direto: Fazer sozinho vs Fazer com acompanhamento profissional",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 87,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Quarta-feira",
+          "format": "Reels",
+          "pillar": "Educação",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 88,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Quinta-feira",
+          "format": "Stories",
+          "pillar": "Conversão / Venda",
+          "theme": "Abertura de vagas/agenda: Como garantir o seu direcionamento ainda esta semana",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 89,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sexta-feira",
+          "format": "Carrossel",
+          "pillar": "Autoridade",
+          "theme": "Comparativo direto: Fazer sozinho vs Fazer com acompanhamento profissional",
+          "hook": "Como destravar seu próximo nível nos próximos 30 dias...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        },
+        {
+          "day": 90,
+          "month": 3,
+          "phase": "Mês 3 - Escala & Conversão em Clientes",
+          "dayOfWeek": "Sábado",
+          "format": "Reels",
+          "pillar": "Conexão",
+          "theme": "Reel de Conversão: Para quem é e para quem não é a nossa solução",
+          "hook": "Se você se encaixa em um desses 3 perfis, esse aviso é pra você...",
+          "cta": "Envie uma mensagem no Direct com a palavra-chave para receber as condições especiais!"
+        }
+      ],
+      "executionMetrics": {
+        "metaMs": 0,
+        "geminiMs": 18002,
+        "synthesisMs": 0,
+        "dbMs": 0,
+        "totalMs": 18002,
+        "fromCache": false,
+        "isFallback": true,
+        "modelUsed": "contingency-engine"
+      },
+      "id": "fda30006-b193-47bf-b2be-c5a4884effb7",
+      "isPaid": false,
+      "createdAt": "2026-11-01T14:17:09.253Z",
+      "updatedAt": "2026-11-01T14:17:09.253Z"
+    },
     {
       "userId": null,
       "userEmail": null,
@@ -4893,5 +7263,31 @@
       "inviteUsedAt": "2026-10-30T22:28:44.533Z"
     }
   ],
-  "clientDiagnostics": []
+  "clientDiagnostics": [],
+  "demoAccessRequests": [
+    {
+      "id": "abc9d66c-99b8-4445-81ad-aedfbbeee922",
+      "name": "Mariana Souza",
+      "email": "mariana.teste.1793542611199@teste.com",
+      "planId": "essencial",
+      "status": "Aprovado",
+      "createdAt": "2026-11-01T14:16:51.201Z",
+      "updatedAt": "2026-11-01T14:16:51.247Z",
+      "reviewedAt": "2026-11-01T14:16:51.217Z",
+      "inviteToken": "c5c8153d877222cb8378ba4868048f50c4567b2fb1f79581",
+      "inviteExpiresAt": "2026-11-03T14:16:51.217Z",
+      "inviteUsedAt": "2026-11-01T14:16:51.235Z",
+      "activatedAt": "2026-11-01T14:16:51.235Z",
+      "userId": "0e939ea3-aece-49e9-95eb-ed9bafcdf5ca"
+    },
+    {
+      "id": "2dd680fc-d9db-49d5-8b59-58d650c62045",
+      "name": "Mariana Souza",
+      "email": "cliente.teste.1793542575295@teste.com",
+      "planId": "essencial",
+      "status": "Aguardando aprovação",
+      "createdAt": "2026-11-01T14:16:15.297Z",
+      "updatedAt": "2026-11-01T14:16:15.297Z"
+    }
+  ]
 }

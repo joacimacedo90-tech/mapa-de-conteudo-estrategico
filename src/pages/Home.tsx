@@ -16,7 +16,8 @@ import {
   Zap,
   Info,
   HelpCircle,
-  Lock
+  Lock,
+  X
 } from 'lucide-react';
 import { api } from '../api';
 import { PricingPlan } from '../types';
@@ -58,6 +59,16 @@ export const Home: React.FC<HomeProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingStepIndex, setLoadingStepIndex] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+
+  // Demo Plan Essencial modal states
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [demoName, setDemoName] = useState('');
+  const [demoEmail, setDemoEmail] = useState('');
+  const [demoSubmitting, setDemoSubmitting] = useState(false);
+  const [demoSubmitted, setDemoSubmitted] = useState(false);
+  const [demoError, setDemoError] = useState('');
 
   // Plans
   const [plans, setPlans] = useState<PricingPlan[]>([]);
@@ -84,14 +95,22 @@ export const Home: React.FC<HomeProps> = ({
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    let timer: NodeJS.Timeout;
     if (isSubmitting) {
       interval = setInterval(() => {
         setLoadingStepIndex((prev) => (prev < loadingSteps.length - 1 ? prev + 1 : prev));
       }, 900);
+      timer = setInterval(() => {
+        setElapsedSeconds((s) => s + 1);
+      }, 1000);
     } else {
       setLoadingStepIndex(0);
+      setElapsedSeconds(0);
     }
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearInterval(timer);
+    };
   }, [isSubmitting]);
 
   const handleUsernameBlur = async () => {
@@ -113,10 +132,18 @@ export const Home: React.FC<HomeProps> = ({
     }
   };
 
+  const handleCancelGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setIsSubmitting(false);
+    setErrorMessage('Geração cancelada a seu pedido. Suas informações foram mantidas para você tentar novamente quando desejar.');
+  };
+
   const cleanTypedUser = username.replace(/^@/, '').trim();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setErrorMessage('');
 
     const cleanUser = username.replace(/^@/, '').trim();
@@ -131,6 +158,10 @@ export const Home: React.FC<HomeProps> = ({
     }
 
     setIsSubmitting(true);
+    setElapsedSeconds(0);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       const response = await api.generateReport({
@@ -154,6 +185,34 @@ export const Home: React.FC<HomeProps> = ({
       const msg = err instanceof Error ? err.message : 'Falha na geração do relatório. Tente novamente.';
       setErrorMessage(msg);
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDemoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDemoError('');
+
+    if (!demoName.trim()) {
+      setDemoError('Por favor, digite seu nome completo.');
+      return;
+    }
+    if (!demoEmail.trim() || !demoEmail.includes('@')) {
+      setDemoError('Por favor, informe um endereço de e-mail válido.');
+      return;
+    }
+
+    setDemoSubmitting(true);
+    try {
+      await api.requestDemoAccess({
+        name: demoName.trim(),
+        email: demoEmail.trim().toLowerCase()
+      });
+      setDemoSubmitted(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Erro ao enviar solicitação de demonstração.';
+      setDemoError(msg);
+    } finally {
+      setDemoSubmitting(false);
     }
   };
 
@@ -196,26 +255,54 @@ export const Home: React.FC<HomeProps> = ({
           Transforme seguidores em clientes com um diagnóstico profundo de posicionamento, projeção realista de novos seguidores e cronograma trimestral completo de 90 dias sob medida para o seu nicho.
         </p>
 
+        {/* Highlighted Experimentar Plano Essencial Button */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setDemoSubmitted(false);
+              setDemoError('');
+              setShowDemoModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white dark:bg-[#15151c] hover:bg-zinc-50 dark:hover:bg-[#1a1a24] border-2 border-[#ee4957] text-xs font-bold text-zinc-900 dark:text-white transition-all transform hover:scale-105 shadow-md shadow-[#ee4957]/15 cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4 text-[#ee4957]" />
+            <span>Experimentar Plano Essencial</span>
+            <span className="px-2 py-0.5 rounded-full bg-[#ee4957] text-white text-[10px] font-black uppercase tracking-wider">
+              Demonstração Gratuita
+            </span>
+          </button>
+        </div>
+
         {/* Form Container */}
         <div id="analisador" className="mt-10 max-w-2xl mx-auto text-left">
           <div className="bg-white dark:bg-[#121217] border border-zinc-200 dark:border-zinc-800/90 rounded-2xl p-6 sm:p-8 shadow-xl dark:shadow-2xl relative overflow-hidden backdrop-blur-xl transition-colors">
             {/* Top coral edge highlight */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#ee4957] to-transparent" />
 
-            {/* Error box */}
+            {/* Error box with instant retry */}
             {errorMessage && (
-              <div className="mb-5 p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/60 flex items-start gap-3 text-red-800 dark:text-red-200 text-sm">
-                <AlertCircle className="w-5 h-5 text-[#ee4957] shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="font-semibold">Atenção:</p>
-                  <p>{errorMessage}</p>
+              <div className="mb-5 p-4 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800/60 flex items-start justify-between gap-3 text-red-800 dark:text-red-200 text-sm">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-[#ee4957] shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="font-semibold">Atenção na Geração:</p>
+                    <p className="text-xs leading-relaxed">{errorMessage}</p>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => handleSubmit()}
+                  className="shrink-0 px-3 py-1.5 rounded-lg bg-[#ee4957] hover:bg-[#d93c4a] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                >
+                  Tentar Novamente
+                </button>
               </div>
             )}
 
             {isSubmitting ? (
-              /* Loading screen */
-              <div className="py-12 px-4 text-center space-y-6">
+              /* Resilient Loading screen with elapsed counter and Cancel button */
+              <div className="py-10 px-4 text-center space-y-5">
                 <div className="relative w-20 h-20 mx-auto">
                   <div className="absolute inset-0 rounded-full border-4 border-zinc-200 dark:border-zinc-800" />
                   <div className="absolute inset-0 rounded-full border-4 border-[#ee4957] border-t-transparent animate-spin" />
@@ -224,13 +311,21 @@ export const Home: React.FC<HomeProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <h3 className="text-xl font-bold text-zinc-900 dark:text-white font-heading">
-                    Construindo seu Mapa de Conteúdo Trimestral
+                    Construindo seu Mapa de Conteúdo Estratégico
                   </h3>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400">
                     Analisando perfil <span className="text-[#ee4957] font-semibold">@{username.replace(/^@/, '')}</span>
                   </p>
+                </div>
+
+                {/* Live elapsed timer badge */}
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-xs text-zinc-600 dark:text-zinc-300 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Tempo decorrido: <strong className="text-[#ee4957] font-mono">{elapsedSeconds}s</strong></span>
+                  <span className="text-zinc-400">•</span>
+                  <span className="text-zinc-500">Pipeline Rápido com Gemini 2.5</span>
                 </div>
 
                 {/* Step indicator */}
@@ -249,8 +344,18 @@ export const Home: React.FC<HomeProps> = ({
                   </div>
                 </div>
 
-                <p className="text-xs text-zinc-500">
-                  Gerando projeção de seguidores, 30 ideias, 10 reels, 10 carrosséis, 10 stories e cronograma de 90 dias.
+                <div className="pt-2 flex items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleCancelGeneration}
+                    className="px-4 py-2 rounded-xl bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    Cancelar geração
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-zinc-500">
+                  Gerando diagnóstico, 30 ideias, 10 reels, 10 carrosséis, 10 stories e cronograma de 90 dias.
                 </p>
               </div>
             ) : (
@@ -704,27 +809,62 @@ export const Home: React.FC<HomeProps> = ({
           ))}
         </div>
 
-        {/* Banner de Solicitação de Acesso Gratuito */}
-        <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#121217] border border-zinc-200 dark:border-zinc-800 text-center max-w-3xl mx-auto space-y-3.5 shadow-sm">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5 text-[#ee4957]" />
-            <span>Processo de Liberação por Avaliação</span>
+        {/* Dual Banner: Demonstração Plano Essencial & Solicitação de Acesso Gratuito */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* Card 1: Demonstração Gratuita do Plano Essencial */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-[#ee4957]/10 via-white dark:via-[#131318] to-white dark:to-[#101014] border-2 border-[#ee4957]/50 text-left space-y-3.5 shadow-md flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ee4957]/15 text-[#ee4957] text-[11px] font-black uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Demonstração Gratuita</span>
+              </div>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white font-heading">
+                Experimentar Plano Essencial
+              </h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                Quer testar o potencial do Mapa de Conteúdo antes de contratar? Solicite a liberação manual pelo administrador e receba acesso para gerar sua análise estratégica completa.
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDemoSubmitted(false);
+                  setDemoError('');
+                  setShowDemoModal(true);
+                }}
+                className="w-full py-3 px-5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#ee4957]/25 transition-all cursor-pointer"
+              >
+                <span>Experimentar Plano Essencial</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white font-heading">
-            Deseja solicitar uma conta de Acesso Gratuito?
-          </h3>
-          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
-            O acesso gratuito funciona mediante análise prévia do administrador. Envie seu nome e e-mail no formulário público. Após a aprovação, você receberá um convite por e-mail com link seguro de uso único (48h) para criar sua senha e ativar sua conta.
-          </p>
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => onNavigate('solicitar-acesso')}
-              className="px-6 py-3 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white font-bold text-xs uppercase tracking-wider inline-flex items-center gap-2 shadow-lg shadow-[#ee4957]/20 transition-all cursor-pointer"
-            >
-              <span>Solicitar Acesso Gratuito</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+
+          {/* Card 2: Acesso Gratuito Avaliado */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-[#121217] border border-zinc-200 dark:border-zinc-800 text-left space-y-3.5 shadow-sm flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Processo por Análise</span>
+              </div>
+              <h3 className="text-xl font-bold text-zinc-900 dark:text-white font-heading">
+                Solicitar Acesso Gratuito
+              </h3>
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                O acesso gratuito tradicional requer aprovação prévia do administrador. Envie seus dados para análise e ativação via convite seguro por e-mail (48h).
+              </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => onNavigate('solicitar-acesso')}
+                className="w-full py-3 px-5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <span>Solicitar Acesso Gratuito</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -755,10 +895,10 @@ export const Home: React.FC<HomeProps> = ({
             <div className="p-4 rounded-xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <h4 className="font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-[#ee4957]" />
-                Como funciona o desbloqueio do conteúdo premium?
+                Como funciona a demonstração gratuita do Plano Essencial?
               </h4>
               <p className="mt-2 text-zinc-600 dark:text-zinc-400 text-xs leading-relaxed">
-                Você recebe uma prévia gratuita imediata com o diagnóstico de posicionamento e 3 ideias de conteúdo. Para desbloquear os 30 dias de cronograma, os 10 roteiros de Reels, carrosséis e sequências de stories, basta clicar no plano desejado e pagar com segurança na Hotmart. Nosso webhook oficial libera o acesso na hora.
+                Basta preencher seu nome e e-mail no formulário de demonstração. O administrador receberá a notificação para aprovação. Ao ser liberado, você recebe um convite individual com link seguro válido por 48 horas para criar sua senha e usar as funcionalidades do Plano Essencial sem custo.
               </p>
             </div>
 
@@ -775,15 +915,128 @@ export const Home: React.FC<HomeProps> = ({
             <div className="p-4 rounded-xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <h4 className="font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-[#ee4957]" />
-                Tenho garantia?
+                Tenho garantia ao contratar planos pagos?
               </h4>
               <p className="mt-2 text-zinc-600 dark:text-zinc-400 text-xs leading-relaxed">
-                Sim! Todos os planos contam com a garantia incondicional de 7 dias da Hotmart. Se por qualquer motivo não ficar satisfeito, solicite reembolso total diretamente na Hotmart.
+                Sim! Todos os planos pagos contam com a garantia incondicional de 7 dias da Hotmart. Se por qualquer motivo não ficar satisfeito, solicite reembolso total diretamente na Hotmart.
               </p>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Modal: Experimentar Plano Essencial */}
+      {showDemoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-[#121217] border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+            <button
+              type="button"
+              onClick={() => setShowDemoModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl bg-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {demoSubmitted ? (
+              <div className="text-center space-y-4 py-4">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-white font-heading">
+                    Solicitação recebida! Aguarde a liberação do seu acesso.
+                  </h3>
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    Seu pedido de demonstração gratuita do <strong>Plano Essencial</strong> foi registrado com sucesso. O administrador foi notificado e irá analisar sua liberação.
+                  </p>
+                  <p className="text-[11px] text-zinc-400">
+                    Você receberá um e-mail com link de ativação seguro de uso único para criar sua senha assim que aprovado.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDemoModal(false)}
+                    className="w-full py-3 px-4 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  >
+                    Entendido
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ee4957]/15 text-[#ee4957] text-[10px] font-black uppercase">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Demonstração Gratuita</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-white font-heading">
+                    Experimentar Plano Essencial
+                  </h3>
+                  <p className="text-xs text-zinc-400">
+                    Preencha os campos abaixo para solicitar ao administrador sua demonstração gratuita do Plano Essencial.
+                  </p>
+                </div>
+
+                {demoError && (
+                  <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-800/60 text-red-200 text-xs flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-[#ee4957] shrink-0 mt-0.5" />
+                    <span>{demoError}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleDemoSubmit} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block text-zinc-300 font-semibold mb-1">
+                      Nome completo <span className="text-[#ee4957]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={demoName}
+                      onChange={(e) => setDemoName(e.target.value)}
+                      placeholder="Ex: Maria Silva"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-[#ee4957]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-300 font-semibold mb-1">
+                      E-mail <span className="text-[#ee4957]">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={demoEmail}
+                      onChange={(e) => setDemoEmail(e.target.value)}
+                      placeholder="seu.email@exemplo.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-[#ee4957]"
+                    />
+                    <p className="mt-1 text-[11px] text-zinc-500">
+                      O convite seguro de ativação com validade de 48 horas será enviado para este e-mail.
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={demoSubmitting}
+                      className="w-full py-3.5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#ee4957]/25 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span>{demoSubmitting ? 'Enviando solicitação...' : 'Enviar Solicitação de Demonstração'}</span>
+                    </button>
+                  </div>
+                </form>
+
+                <p className="text-[10px] text-zinc-500 text-center">
+                  Não solicitamos dados de cartão de crédito. Liberação sujeita a aprovação manual.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
