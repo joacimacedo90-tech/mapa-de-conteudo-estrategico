@@ -80,6 +80,17 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
   const [copiedDemoInviteId, setCopiedDemoInviteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Admin Direct Demo Grant States
+  const [adminDemoName, setAdminDemoName] = useState('');
+  const [adminDemoEmail, setAdminDemoEmail] = useState('');
+  const [adminDemoSubmitting, setAdminDemoSubmitting] = useState(false);
+  const [createdDemoInvite, setCreatedDemoInvite] = useState<{
+    name: string;
+    email: string;
+    inviteUrl: string;
+    inviteToken: string;
+  } | null>(null);
+
   // Filter / Search
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -231,6 +242,54 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
       await loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Falha ao alterar situação do teste';
+      showNotification(msg, 'error');
+    } finally {
+      setActionLoadingDemoId(null);
+    }
+  };
+
+  const handleCreateDemoGrant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminDemoName.trim()) {
+      showNotification('Por favor, informe o nome do interessado.', 'error');
+      return;
+    }
+    if (!adminDemoEmail.trim() || !adminDemoEmail.includes('@')) {
+      showNotification('Por favor, informe um e-mail válido.', 'error');
+      return;
+    }
+    try {
+      setAdminDemoSubmitting(true);
+      const res = await api.adminCreateDemoGrant({
+        name: adminDemoName.trim(),
+        email: adminDemoEmail.trim().toLowerCase()
+      });
+      showNotification(res.message);
+      setCreatedDemoInvite({
+        name: res.request.name,
+        email: res.request.email,
+        inviteUrl: res.inviteUrl,
+        inviteToken: res.inviteToken
+      });
+      setAdminDemoName('');
+      setAdminDemoEmail('');
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao liberar teste essencial';
+      showNotification(msg, 'error');
+    } finally {
+      setAdminDemoSubmitting(false);
+    }
+  };
+
+  const handleProrrogarDemo = async (id: string, additionalDays = 7) => {
+    try {
+      setActionLoadingDemoId(id);
+      const res = await api.adminProrrogarDemo(id, additionalDays);
+      showNotification(res.message);
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Falha ao prorrogar teste';
       showNotification(msg, 'error');
     } finally {
       setActionLoadingDemoId(null);
@@ -631,7 +690,7 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
           }`}
         >
           <Sparkles className="w-4 h-4 text-amber-300" />
-          <span>Testes do Plano Essencial ({demoRequests.length})</span>
+          <span>Liberar Teste Essencial ({demoRequests.length})</span>
           {demoRequests.filter((r) => r.status === 'Aguardando aprovação').length > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ee4957] text-white animate-pulse">
               {demoRequests.filter((r) => r.status === 'Aguardando aprovação').length} pendente(s)
@@ -1608,23 +1667,119 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
       )}
 
       {/* =================================================== */}
-      {/* TAB: TESTES DO PLANO ESSENCIAL (DEMONSTRAÇÃO)       */}
+      {/* TAB: LIBERAR TESTE ESSENCIAL (DEMONSTRAÇÃO 7 DIAS)  */}
       {/* =================================================== */}
       {tab === 'demo-access' && (
         <div className="space-y-8">
-          {/* Section 1: Demo Requests */}
+          {/* Card: Formulário Administrativo de Liberação do Teste */}
+          <div className="bg-white dark:bg-[#121216] border-2 border-[#ee4957]/40 rounded-2xl p-6 sm:p-7 shadow-lg shadow-[#ee4957]/5">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-5 border-b border-zinc-200 dark:border-zinc-800">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ee4957]/15 text-[#ee4957] text-[11px] font-black uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Liberação Privada do Teste</span>
+                </div>
+                <h4 className="text-xl font-black text-zinc-900 dark:text-white font-heading">
+                  Liberar Teste Essencial (7 Dias Corridos)
+                </h4>
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-3xl leading-relaxed">
+                  Somente o administrador pode conceder acessos de demonstração. Cada liberação concede <strong>7 dias corridos de acesso</strong> a partir da primeira ativação da conta. Ao expirar o prazo, o teste encerra automaticamente sem cobrança.
+                </p>
+              </div>
+
+              <div className="shrink-0 flex items-center gap-2">
+                <span className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                  {demoRequests.length} demonstrações liberadas
+                </span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleCreateDemoGrant} className="mt-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-zinc-800 dark:text-zinc-300 mb-1.5">
+                    Nome Completo do Interessado:
+                  </label>
+                  <input
+                    type="text"
+                    value={adminDemoName}
+                    onChange={(e) => setAdminDemoName(e.target.value)}
+                    placeholder="Ex: Carlos Eduardo Silveira"
+                    className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-[#ee4957]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-zinc-800 dark:text-zinc-300 mb-1.5">
+                    E-mail do Interessado:
+                  </label>
+                  <input
+                    type="email"
+                    value={adminDemoEmail}
+                    onChange={(e) => setAdminDemoEmail(e.target.value)}
+                    placeholder="Ex: carloseduardo@email.com"
+                    className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none focus:border-[#ee4957]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                <div className="text-[11px] text-zinc-500 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#ee4957]" />
+                  <span>Convite seguro de uso único válido por 48 horas para o cliente definir a senha.</span>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={adminDemoSubmitting}
+                  className="px-6 py-3 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#ee4957]/20 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{adminDemoSubmitting ? 'Gerando Liberação...' : 'Liberar Teste Essencial'}</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Generated Invite Box */}
+            {createdDemoInvite && (
+              <div className="mt-5 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Teste Liberado com Sucesso para {createdDemoInvite.name}!</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-mono break-all">
+                    {createdDemoInvite.inviteUrl}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopyDemoInvite(createdDemoInvite.inviteToken, 'new-grant')}
+                  className="shrink-0 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copiar Link</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Section: Histórico de Liberações & Controle dos 7 Dias */}
           <div className="bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm space-y-0">
             <div className="p-4 sm:p-6 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h4 className="text-base font-bold text-zinc-900 dark:text-white font-heading flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-[#ee4957]" />
-                  <span>Solicitações de Teste do Plano Essencial</span>
+                  <Shield className="w-5 h-5 text-[#ee4957]" />
+                  <span>Histórico de Demonstrações do Plano Essencial</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ee4957]/15 text-[#ee4957] border border-[#ee4957]/30">
-                    {demoRequests.length} solicitações
+                    {demoRequests.length} registros
                   </span>
                 </h4>
                 <p className="text-xs text-zinc-500 mt-1 max-w-3xl leading-relaxed">
-                  Interessados que clicaram em <strong>"Experimentar Plano Essencial"</strong> na página pública. A liberação não é automática: o administrador aprova manualmente, gerando um convite individual e seguro de uso único (48h) com envio por e-mail para que o cliente defina sua senha.
+                  Controle individual de vigência (7 dias corridos a partir da ativação), bloqueio imediato, encerramento ou prorrogação manual.
                 </p>
               </div>
 
@@ -1643,18 +1798,19 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
                 <thead>
                   <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 text-zinc-600 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[11px]">
                     <th className="py-3 px-4">Interessado</th>
-                    <th className="py-3 px-4">E-mail</th>
-                    <th className="py-3 px-4">Data do Pedido</th>
+                    <th className="py-3 px-4">Quem Autorizou</th>
+                    <th className="py-3 px-4">Data da Liberação</th>
+                    <th className="py-3 px-4">Ativação & Prazo (7 Dias)</th>
                     <th className="py-3 px-4">Situação</th>
-                    <th className="py-3 px-4">Convite / Link Seguro (48h)</th>
-                    <th className="py-3 px-4 text-right">Ações do Administrador</th>
+                    <th className="py-3 px-4">Convite / Link</th>
+                    <th className="py-3 px-4 text-right">Ações de Controle</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
                   {demoRequests.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-zinc-400">
-                        Nenhuma solicitação de demonstração do Plano Essencial registrada até o momento.
+                      <td colSpan={7} className="py-12 text-center text-zinc-400">
+                        Nenhuma liberação de teste do Plano Essencial registrada até o momento.
                       </td>
                     </tr>
                   ) : (
@@ -1665,15 +1821,19 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
                       const isBlocked = req.status === 'Bloqueado';
                       const isEnded = req.status === 'Encerrado';
                       const isActivated = !!req.inviteUsedAt;
-                      const isExpired = req.inviteExpiresAt && new Date() > new Date(req.inviteExpiresAt) && !isActivated;
+                      const isExpired = req.demoExpiresAt ? new Date() > new Date(req.demoExpiresAt) : false;
 
                       return (
                         <tr key={req.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
                           <td className="py-3.5 px-4 font-bold text-zinc-900 dark:text-white">
                             {req.name}
+                            <div className="text-[11px] text-zinc-500 font-normal font-mono">{req.email}</div>
                           </td>
-                          <td className="py-3.5 px-4 text-zinc-600 dark:text-zinc-400 font-mono text-[11px]">
-                            {req.email}
+                          <td className="py-3.5 px-4 text-zinc-700 dark:text-zinc-300 whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 font-semibold text-[11px]">
+                              <Shield className="w-3 h-3 text-[#ee4957]" />
+                              <span>{req.authorizedBy || 'Administrador'}</span>
+                            </span>
                           </td>
                           <td className="py-3.5 px-4 text-zinc-500 whitespace-nowrap">
                             {new Date(req.createdAt).toLocaleString('pt-BR', {
@@ -1681,132 +1841,155 @@ export const Admin: React.FC<AdminProps> = ({ onLogoutAdmin, onNavigate }) => {
                               timeStyle: 'short'
                             })}
                           </td>
+                          <td className="py-3.5 px-4 text-xs whitespace-nowrap">
+                            {isActivated ? (
+                              <div className="space-y-0.5">
+                                <div className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px] flex items-center gap-1">
+                                  <Check className="w-3 h-3" />
+                                  <span>Ativado em {new Date(req.activatedAt!).toLocaleDateString('pt-BR')}</span>
+                                </div>
+                                {req.demoExpiresAt && (
+                                  <div className={`text-[10px] ${isExpired ? 'text-red-500 font-bold' : 'text-zinc-500'}`}>
+                                    {isExpired ? 'Expirou em: ' : 'Expira em: '}
+                                    {new Date(req.demoExpiresAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                                  </div>
+                                )}
+                                {req.prorrogadoAt && (
+                                  <div className="text-[9px] text-[#ee4957] font-bold">
+                                    ✓ Prorrogado (+{req.durationDays || 7} dias)
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-amber-600 dark:text-amber-400 text-[11px] font-medium space-y-0.5">
+                                <div>Aguardando ativação (48h)</div>
+                                {req.inviteExpiresAt && (
+                                  <div className="text-[10px] text-zinc-500">
+                                    Válido até: {new Date(req.inviteExpiresAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
                           <td className="py-3.5 px-4 whitespace-nowrap">
-                            {isPending && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                                <Clock className="w-3 h-3" />
-                                <span>Aguardando liberação</span>
+                            <div className="space-y-1">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#ee4957]/15 text-[#ee4957] border border-[#ee4957]/30">
+                                Demonstração Essencial
                               </span>
-                            )}
-                            {isApproved && (
-                              <div className="space-y-1">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                                  <UserCheck className="w-3 h-3" />
-                                  <span>Aprovado</span>
-                                </span>
-                                {isActivated ? (
-                                  <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                                    ✓ Conta ativada
-                                  </div>
-                                ) : isExpired ? (
-                                  <div className="text-[10px] text-red-500 font-medium">
-                                    Convite expirado (48h)
-                                  </div>
-                                ) : (
-                                  <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
-                                    Aguardando ativação pelo cliente
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            {isRejected && (
-                              <div className="space-y-1">
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 dark:bg-red-950/70 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
-                                  <UserX className="w-3 h-3" />
-                                  <span>Recusado</span>
-                                </span>
-                                {req.rejectionReason && (
-                                  <div className="text-[10px] text-zinc-500 max-w-xs truncate" title={req.rejectionReason}>
-                                    Motivo: {req.rejectionReason}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            {isBlocked && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-50 dark:bg-red-950/70 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800">
-                                <Lock className="w-3 h-3" />
-                                <span>Bloqueado</span>
-                              </span>
-                            )}
-                            {isEnded && (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
-                                <span>Encerrado</span>
-                              </span>
-                            )}
+
+                              {isBlocked ? (
+                                <div>
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800">
+                                    <Lock className="w-3 h-3" />
+                                    <span>Bloqueado</span>
+                                  </span>
+                                </div>
+                              ) : isEnded || isExpired ? (
+                                <div>
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Expirado / Encerrado</span>
+                                  </span>
+                                </div>
+                              ) : isActivated ? (
+                                <div>
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    <span>Em Teste Ativo (7 Dias)</span>
+                                  </span>
+                                </div>
+                              ) : (
+                                <div>
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Liberado (Aguardando Ativação)</span>
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3.5 px-4 text-xs">
                             {req.inviteToken ? (
-                              <div className="space-y-1.5 max-w-xs">
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleCopyDemoInvite(req.inviteToken!, req.id)}
-                                    className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-                                  >
-                                    {copiedDemoInviteId === req.id ? (
-                                      <>
-                                        <Check className="w-3 h-3 text-emerald-500" />
-                                        <span className="text-emerald-600 dark:text-emerald-400">Link Copiado!</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Copy className="w-3 h-3 text-[#ee4957]" />
-                                        <span>Copiar Link de Ativação</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                                {req.inviteExpiresAt && (
-                                  <div className="text-[10px] text-zinc-500 flex items-center gap-1">
-                                    <Clock className="w-3 h-3 text-zinc-400" />
-                                    <span>
-                                      Validade: {new Date(req.inviteExpiresAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                                    </span>
-                                  </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyDemoInvite(req.inviteToken!, req.id)}
+                                className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                {copiedDemoInviteId === req.id ? (
+                                  <>
+                                    <Check className="w-3 h-3 text-emerald-500" />
+                                    <span className="text-emerald-600 dark:text-emerald-400">Copiado!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3 text-[#ee4957]" />
+                                    <span>Copiar Link</span>
+                                  </>
                                 )}
-                              </div>
+                              </button>
                             ) : (
                               <span className="text-zinc-400 dark:text-zinc-600 text-[11px]">—</span>
                             )}
                           </td>
                           <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-2">
-                              {(isPending || isRejected || isEnded) && (
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Prorrogar +7 Dias */}
+                              <button
+                                type="button"
+                                disabled={actionLoadingDemoId === req.id}
+                                onClick={() => handleProrrogarDemo(req.id, 7)}
+                                title="Prorrogar o teste por mais 7 dias corridos"
+                                className="px-2.5 py-1 rounded-lg bg-[#ee4957]/15 hover:bg-[#ee4957]/25 text-[#ee4957] font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                <span>+7 Dias</span>
+                              </button>
+
+                              {/* Bloquear / Desbloquear */}
+                              {isBlocked ? (
                                 <button
                                   type="button"
                                   disabled={actionLoadingDemoId === req.id}
-                                  onClick={() => handleApproveDemo(req.id)}
-                                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                                  onClick={() => handleUpdateDemoStatus(req.id, 'Aprovado')}
+                                  title="Reativar acesso de teste"
+                                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-all cursor-pointer disabled:opacity-50"
                                 >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>{isPending ? 'Aprovar Teste' : 'Liberar Novamente'}</span>
+                                  Reativar
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={actionLoadingDemoId === req.id}
+                                  onClick={() => handleUpdateDemoStatus(req.id, 'Bloqueado')}
+                                  title="Bloquear acesso temporariamente"
+                                  className="px-2.5 py-1 rounded-lg bg-red-100 dark:bg-red-950/60 hover:bg-red-200 dark:hover:bg-red-900 text-red-700 dark:text-red-300 font-bold text-[11px] border border-red-300 dark:border-red-800 transition-all cursor-pointer disabled:opacity-50"
+                                >
+                                  Bloquear
                                 </button>
                               )}
 
-                              {isPending && (
+                              {/* Encerrar */}
+                              {!isEnded && !isExpired && (
                                 <button
                                   type="button"
                                   disabled={actionLoadingDemoId === req.id}
-                                  onClick={() => handleRejectDemo(req.id)}
-                                  className="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-950/70 hover:bg-red-200 dark:hover:bg-red-900 text-red-700 dark:text-red-400 font-bold text-[11px] flex items-center gap-1 border border-red-200 dark:border-red-800 transition-all cursor-pointer disabled:opacity-50"
+                                  onClick={() => handleUpdateDemoStatus(req.id, 'Encerrado')}
+                                  title="Encerrar teste imediatamente"
+                                  className="px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium text-[11px] transition-all cursor-pointer disabled:opacity-50"
                                 >
-                                  <UserX className="w-3.5 h-3.5" />
-                                  <span>Recusar</span>
+                                  Encerrar
                                 </button>
                               )}
 
-                              {isApproved && (
-                                <button
-                                  type="button"
-                                  disabled={actionLoadingDemoId === req.id}
-                                  onClick={() => handleApproveDemo(req.id)}
-                                  title="Gera um novo convite de uso único e estende a validade por mais 48 horas"
-                                  className="px-2.5 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium text-[11px] flex items-center gap-1 transition-all cursor-pointer"
-                                >
-                                  <Send className="w-3 h-3 text-[#ee4957]" />
-                                  <span>Regerar Link</span>
-                                </button>
-                              )}
+                              {/* Regerar Link */}
+                              <button
+                                type="button"
+                                disabled={actionLoadingDemoId === req.id}
+                                onClick={() => handleApproveDemo(req.id)}
+                                title="Regera o link de ativação seguro com validade renovada de 48h"
+                                className="p-1 rounded-lg text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                              >
+                                <Send className="w-3.5 h-3.5 text-[#ee4957]" />
+                              </button>
                             </div>
                           </td>
                         </tr>

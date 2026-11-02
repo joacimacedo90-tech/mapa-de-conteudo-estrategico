@@ -17,10 +17,16 @@ import {
   Info,
   HelpCircle,
   Lock,
-  X
+  X,
+  Play,
+  Copy,
+  Check,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { api } from '../api';
-import { PricingPlan } from '../types';
+import { PricingPlan, NicheDetectionResult, PublicReelsCalendarDay, PublicReelsDemoResult, ReelStrategicObjective } from '../types';
 
 interface HomeProps {
   onReportGenerated: (reportId: string) => void;
@@ -62,13 +68,15 @@ export const Home: React.FC<HomeProps> = ({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
-  // Demo Plan Essencial modal states
-  const [showDemoModal, setShowDemoModal] = useState(false);
-  const [demoName, setDemoName] = useState('');
-  const [demoEmail, setDemoEmail] = useState('');
-  const [demoSubmitting, setDemoSubmitting] = useState(false);
-  const [demoSubmitted, setDemoSubmitted] = useState(false);
-  const [demoError, setDemoError] = useState('');
+  // Calendário de 30 Dias (Somente o @ do usuário)
+  const [demoInstagram, setDemoInstagram] = useState('');
+  const [generatingCalendar, setGeneratingCalendar] = useState(false);
+  const [reelsResult, setReelsResult] = useState<PublicReelsDemoResult | null>(null);
+  const [reelsError, setReelsError] = useState('');
+  const [reelsFilterObjective, setReelsFilterObjective] = useState<string>('all');
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<PublicReelsCalendarDay | null>(null);
+  const [copiedReelDay, setCopiedReelDay] = useState<number | null>(null);
+  const [copiedAllCalendar, setCopiedAllCalendar] = useState(false);
 
   // Plans
   const [plans, setPlans] = useState<PricingPlan[]>([]);
@@ -188,32 +196,76 @@ export const Home: React.FC<HomeProps> = ({
     }
   };
 
-  const handleDemoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setDemoError('');
-
-    if (!demoName.trim()) {
-      setDemoError('Por favor, digite seu nome completo.');
-      return;
-    }
-    if (!demoEmail.trim() || !demoEmail.includes('@')) {
-      setDemoError('Por favor, informe um endereço de e-mail válido.');
+  const handleGenerateCalendar = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setReelsError('');
+    const clean = demoInstagram.replace(/^@/, '').trim();
+    if (!clean) {
+      setReelsError('Por favor, informe o seu @ do Instagram.');
       return;
     }
 
-    setDemoSubmitting(true);
+    setGeneratingCalendar(true);
     try {
-      await api.requestDemoAccess({
-        name: demoName.trim(),
-        email: demoEmail.trim().toLowerCase()
+      const res = await api.generate30DaysReelsDemo({
+        username: clean
       });
-      setDemoSubmitted(true);
+      if (res.success && res.demo) {
+        setReelsResult(res.demo);
+        setTimeout(() => {
+          document.getElementById('calendario-30-dias-container')?.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      } else {
+        throw new Error('Falha ao processar o calendário de 30 dias.');
+      }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Erro ao enviar solicitação de demonstração.';
-      setDemoError(msg);
+      const msg = err instanceof Error ? err.message : 'Falha ao gerar o calendário de 30 dias.';
+      setReelsError(msg);
     } finally {
-      setDemoSubmitting(false);
+      setGeneratingCalendar(false);
     }
+  };
+
+  const handleCopyReelDay = (day: PublicReelsCalendarDay) => {
+    const text = `🎬 REEL DIA ${day.day}: ${day.theme}
+🎯 OBJETIVO: ${day.strategicObjective}
+
+⏱️ GANCHO 3 SEGUNDOS:
+${day.hook3s}
+
+📝 ROTEIRO / ESTRUTURA:
+${day.scriptStructure}
+
+💡 SUGESTÃO DE DESENVOLVIMENTO:
+${day.contentDevelopment}
+
+📣 CTA:
+${day.cta}
+
+📄 LEGENDA SUGERIDA:
+${day.suggestedCaption}
+
+🏷️ HASHTAGS:
+${day.hashtags.join(' ')}`;
+
+    navigator.clipboard.writeText(text);
+    setCopiedReelDay(day.day);
+    setTimeout(() => setCopiedReelDay(null), 2500);
+  };
+
+  const handleCopyAllCalendar = () => {
+    if (!reelsResult) return;
+    const header = `📅 CALENDÁRIO EDITORIAL DE 30 DIAS - @${reelsResult.username.toUpperCase()}\nNicho: ${reelsResult.confirmedNiche}\n\n`;
+    const daysText = reelsResult.calendar
+      .map(
+        (day) =>
+          `📌 DIA ${day.day} [${day.strategicObjective}]\nTema: ${day.theme}\nGancho (3s): "${day.hook3s}"\nRoteiro: ${day.scriptStructure}\nCTA: ${day.cta}\n`
+      )
+      .join('\n----------------------------------------\n\n');
+
+    navigator.clipboard.writeText(header + daysText);
+    setCopiedAllCalendar(true);
+    setTimeout(() => setCopiedAllCalendar(false), 2500);
   };
 
   return (
@@ -255,21 +307,19 @@ export const Home: React.FC<HomeProps> = ({
           Transforme seguidores em clientes com um diagnóstico profundo de posicionamento, projeção realista de novos seguidores e cronograma trimestral completo de 90 dias sob medida para o seu nicho.
         </p>
 
-        {/* Highlighted Experimentar Plano Essencial Button */}
+        {/* Callout to Calendário de 30 Dias */}
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
             onClick={() => {
-              setDemoSubmitted(false);
-              setDemoError('');
-              setShowDemoModal(true);
+              document.getElementById('calendario-30-dias')?.scrollIntoView({ behavior: 'smooth' });
             }}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white dark:bg-[#15151c] hover:bg-zinc-50 dark:hover:bg-[#1a1a24] border-2 border-[#ee4957] text-xs font-bold text-zinc-900 dark:text-white transition-all transform hover:scale-105 shadow-md shadow-[#ee4957]/15 cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-[#ee4957]" />
-            <span>Experimentar Plano Essencial</span>
+            <Calendar className="w-4 h-4 text-[#ee4957]" />
+            <span>Gerar Calendário de 30 Dias</span>
             <span className="px-2 py-0.5 rounded-full bg-[#ee4957] text-white text-[10px] font-black uppercase tracking-wider">
-              Demonstração Gratuita
+              Apenas com seu @
             </span>
           </button>
         </div>
@@ -618,6 +668,416 @@ export const Home: React.FC<HomeProps> = ({
         </div>
       </section>
 
+      {/* ========================================================= */}
+      {/* SEÇÃO: CALENDÁRIO EDITORIAL DE 30 DIAS (FORMATO DE CALENDÁRIO) */}
+      {/* ========================================================= */}
+      <section id="calendario-30-dias" className="py-16 md:py-20 max-w-6xl mx-auto px-4 sm:px-6 scroll-mt-10">
+        <div id="demonstracao-inteligente" className="bg-gradient-to-b from-[#14141a] via-[#101014] to-[#0c0c10] border-2 border-[#ee4957]/40 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+          {/* Subtle top edge */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#ee4957] to-transparent" />
+
+          {/* Section Heading */}
+          <div className="text-center max-w-3xl mx-auto space-y-3 mb-8">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#ee4957]/15 border border-[#ee4957]/30 text-[#ee4957] text-xs font-black uppercase tracking-wider">
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Calendário Editorial de 30 Dias • Formato de Grade Mensal</span>
+            </div>
+
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-white font-heading tracking-tight">
+              Calendário de 30 Dias do seu <span className="text-[#ee4957]">Instagram</span>
+            </h2>
+
+            <p className="text-xs sm:text-sm text-zinc-300 max-w-2xl mx-auto leading-relaxed">
+              Digite somente o seu @ do Instagram. Nossa inteligência artificial analisa o nicho real do seu perfil e gera instantaneamente o seu cronograma editorial completo de 30 dias em formato de calendário.
+            </p>
+          </div>
+
+          {/* Único Campo: Input do Instagram @ */}
+          <div className="max-w-xl mx-auto space-y-4">
+            <form onSubmit={handleGenerateCalendar} className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="relative w-full">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-bold text-sm">@</span>
+                <input
+                  type="text"
+                  value={demoInstagram}
+                  onChange={(e) => setDemoInstagram(e.target.value)}
+                  placeholder="seu.instagram (ex: dr.carlos, nutri.carol)"
+                  disabled={generatingCalendar}
+                  className="w-full pl-8 pr-4 py-3.5 rounded-2xl bg-zinc-900 border border-zinc-700/80 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#ee4957] shadow-inner disabled:opacity-60"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={generatingCalendar || !demoInstagram.trim()}
+                className="w-full sm:w-auto shrink-0 px-6 py-3.5 rounded-2xl bg-[#ee4957] hover:bg-[#d93c4a] text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#ee4957]/25 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {generatingCalendar ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Gerando Calendário...</span>
+                  </>
+                ) : (
+                  <>
+                    <Calendar className="w-4 h-4" />
+                    <span>Gerar Calendário de 30 Dias</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Loading indicator */}
+            {generatingCalendar && (
+              <div className="p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-center space-y-2.5 animate-in fade-in duration-200">
+                <div className="flex items-center justify-center gap-2 text-xs font-bold text-[#ee4957]">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Analisando perfil @{demoInstagram.replace(/^@/, '')} e estruturando calendário com IA...</span>
+                </div>
+                <p className="text-[11px] text-zinc-400">
+                  Mapeando 30 dias com temas, ganchos de 3s, roteiros, chamadas para ação e distribuição entre os 7 pilares estratégicos.
+                </p>
+                <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-[#ee4957] via-[#ff6b78] to-[#ee4957] animate-pulse w-3/4" />
+                </div>
+              </div>
+            )}
+
+            {/* Error box */}
+            {reelsError && (
+              <div className="p-4 rounded-xl bg-red-950/50 border border-red-800/60 text-red-200 text-xs flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-[#ee4957] shrink-0 mt-0.5" />
+                  <span>{reelsError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleGenerateCalendar()}
+                  className="shrink-0 px-2.5 py-1 rounded-lg bg-[#ee4957] text-white text-[11px] font-bold cursor-pointer"
+                >
+                  Tentar Novamente
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* APRESENTAÇÃO APENAS EM FORMATO DE CALENDÁRIO */}
+          {reelsResult && (
+            <div id="calendario-30-dias-container" className="mt-12 space-y-6 pt-6 border-t border-zinc-800 animate-in fade-in duration-300">
+              {/* Header do Calendário */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#ee4957]/15 border border-[#ee4957]/30 text-[#ee4957] text-[11px] font-black uppercase">
+                      @{reelsResult.username}
+                    </span>
+                    <span className="text-xs text-zinc-400 font-medium">
+                      Nicho: <strong className="text-white font-semibold">{reelsResult.confirmedNiche}</strong>
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-white font-heading">
+                    Calendário Editorial Mensal de 30 Dias
+                  </h3>
+                  <p className="text-[11px] text-zinc-400">
+                    Clique em qualquer dia do calendário para ver o roteiro detalhado, gancho inicial e CTA.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Filtro por Objetivo */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-zinc-400">Objetivo:</span>
+                    <select
+                      value={reelsFilterObjective}
+                      onChange={(e) => setReelsFilterObjective(e.target.value)}
+                      className="px-3 py-2 rounded-xl bg-zinc-950 border border-zinc-700 text-xs text-white focus:outline-none focus:border-[#ee4957]"
+                    >
+                      <option value="all">Todos os Objetivos (30 Dias)</option>
+                      <option value="Autoridade">Autoridade</option>
+                      <option value="Educação">Educação</option>
+                      <option value="Identificação com o público">Identificação com o público</option>
+                      <option value="Quebra de objeções">Quebra de objeções</option>
+                      <option value="Prova de conhecimento">Prova de conhecimento</option>
+                      <option value="Engajamento">Engajamento</option>
+                      <option value="Conversão e vendas">Conversão e vendas</option>
+                    </select>
+                  </div>
+
+                  {/* Copiar Calendário Completo */}
+                  <button
+                    type="button"
+                    onClick={handleCopyAllCalendar}
+                    className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    {copiedAllCalendar ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-[#ee4957]" />
+                        <span>Copiar Calendário (Texto)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* GRADE VISUAL DO CALENDÁRIO (7 COLUNAS: SEG A DOM) */}
+              <div className="space-y-2">
+                {/* Cabeçalho dos Dias da Semana */}
+                <div className="hidden lg:grid grid-cols-7 gap-2.5 text-center text-xs font-bold uppercase tracking-wider text-zinc-400 pb-1">
+                  <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60">Segunda</div>
+                  <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60">Terça</div>
+                  <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60">Quarta</div>
+                  <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60">Quinta</div>
+                  <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60">Sexta</div>
+                  <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60">Sábado</div>
+                  <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60">Domingo</div>
+                </div>
+
+                {/* Grade dos 30 Dias */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2.5">
+                  {reelsResult.calendar
+                    .filter((item) => reelsFilterObjective === 'all' || item.strategicObjective === reelsFilterObjective)
+                    .map((reel) => {
+                      // Color mapping for strategic objectives
+                      let badgeColor = 'bg-[#ee4957]/15 text-[#ee4957] border-[#ee4957]/30';
+                      if (reel.strategicObjective === 'Educação') {
+                        badgeColor = 'bg-blue-500/15 text-blue-400 border-blue-500/30';
+                      } else if (reel.strategicObjective === 'Identificação com o público') {
+                        badgeColor = 'bg-purple-500/15 text-purple-400 border-purple-500/30';
+                      } else if (reel.strategicObjective === 'Quebra de objeções') {
+                        badgeColor = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+                      } else if (reel.strategicObjective === 'Prova de conhecimento') {
+                        badgeColor = 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30';
+                      } else if (reel.strategicObjective === 'Engajamento') {
+                        badgeColor = 'bg-pink-500/15 text-pink-400 border-pink-500/30';
+                      } else if (reel.strategicObjective === 'Conversão e vendas') {
+                        badgeColor = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+                      }
+
+                      return (
+                        <div
+                          key={reel.day}
+                          onClick={() => setSelectedCalendarDay(reel)}
+                          className="group relative p-3.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 hover:border-[#ee4957] hover:bg-zinc-850/90 transition-all cursor-pointer flex flex-col justify-between min-h-[175px] shadow-sm hover:shadow-lg hover:shadow-[#ee4957]/10"
+                        >
+                          <div className="space-y-2">
+                            {/* Top row: Day number and reel icon */}
+                            <div className="flex items-center justify-between gap-1 border-b border-zinc-800 pb-2">
+                              <span className="px-2 py-0.5 rounded-md bg-zinc-800 group-hover:bg-[#ee4957] text-white text-[11px] font-black transition-colors">
+                                Dia {reel.day}
+                              </span>
+                              <span className="text-[10px] text-zinc-500 flex items-center gap-1 font-mono">
+                                <Video className="w-3 h-3 text-[#ee4957]" />
+                                Reel
+                              </span>
+                            </div>
+
+                            {/* Strategic Objective pill */}
+                            <div>
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-bold border truncate max-w-full ${badgeColor}`}>
+                                {reel.strategicObjective}
+                              </span>
+                            </div>
+
+                            {/* Theme */}
+                            <h4 className="text-xs font-bold text-white group-hover:text-[#ee4957] transition-colors line-clamp-3 leading-snug font-heading">
+                              {reel.theme}
+                            </h4>
+                          </div>
+
+                          {/* Click prompt */}
+                          <div className="pt-2 mt-2 border-t border-zinc-800/60 flex items-center justify-between text-[10px] text-zinc-400 group-hover:text-white">
+                            <span>Ver Roteiro</span>
+                            <ArrowRight className="w-3 h-3 transform group-hover:translate-x-1 transition-transform text-[#ee4957]" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* MODAL DE DETALHES DO DIA DO CALENDÁRIO */}
+              {selectedCalendarDay && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                  <div className="relative w-full max-w-2xl bg-[#121217] border-2 border-[#ee4957]/60 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+                    {/* Botão fechar */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCalendarDay(null)}
+                      className="absolute top-4 right-4 p-2 rounded-xl bg-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+
+                    {/* Header do dia */}
+                    <div className="space-y-2 border-b border-zinc-800 pb-4 pr-8">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-3 py-1 rounded-lg bg-[#ee4957] text-white text-xs font-black uppercase">
+                          Dia {selectedCalendarDay.day} de 30
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#ee4957]/15 text-[#ee4957] border border-[#ee4957]/30">
+                          {selectedCalendarDay.strategicObjective}
+                        </span>
+                        <span className="text-xs text-zinc-400">
+                          Formato: <strong>Instagram Reel</strong>
+                        </span>
+                      </div>
+                      <h3 className="text-lg sm:text-2xl font-black text-white font-heading">
+                        {selectedCalendarDay.theme}
+                      </h3>
+                    </div>
+
+                    {/* Conteúdo do roteiro */}
+                    <div className="space-y-4 text-xs">
+                      {/* Gancho 3 segundos */}
+                      <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-[#ee4957] flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5" />
+                          <span>Gancho Inicial (Primeiros 3 Segundos):</span>
+                        </span>
+                        <p className="text-sm text-zinc-100 font-medium italic">
+                          "{selectedCalendarDay.hook3s}"
+                        </p>
+                      </div>
+
+                      {/* Roteiro */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Roteiro / Estrutura do Vídeo:</span>
+                        <p className="text-xs text-zinc-200 leading-relaxed bg-zinc-950/70 p-3 rounded-xl border border-zinc-800">
+                          {selectedCalendarDay.scriptStructure}
+                        </p>
+                      </div>
+
+                      {/* Desenvolvimento */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Sugestão de Desenvolvimento:</span>
+                        <p className="text-xs text-zinc-300 leading-relaxed bg-zinc-950/50 p-3 rounded-xl border border-zinc-850">
+                          {selectedCalendarDay.contentDevelopment}
+                        </p>
+                      </div>
+
+                      {/* CTA */}
+                      <div className="p-3 rounded-xl bg-[#ee4957]/10 border border-[#ee4957]/25 space-y-1">
+                        <span className="text-[10px] font-bold uppercase text-[#ee4957]">Chamada para Ação (CTA):</span>
+                        <p className="text-xs text-white font-semibold">
+                          {selectedCalendarDay.cta}
+                        </p>
+                      </div>
+
+                      {/* Legenda */}
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Legenda Sugerida:</span>
+                        <p className="text-xs text-zinc-300 leading-relaxed bg-zinc-950/60 p-3 rounded-xl border border-zinc-800">
+                          {selectedCalendarDay.suggestedCaption}
+                        </p>
+                      </div>
+
+                      {/* Hashtags */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {selectedCalendarDay.hashtags.map((tag, tIdx) => (
+                          <span key={tIdx} className="text-[10px] font-mono text-[#ee4957] bg-zinc-950 px-2 py-0.5 rounded border border-zinc-800">
+                            {tag.startsWith('#') ? tag : `#${tag}`}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Ações do Modal */}
+                    <div className="pt-3 border-t border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          disabled={selectedCalendarDay.day <= 1}
+                          onClick={() => {
+                            const prev = reelsResult.calendar.find((r) => r.day === selectedCalendarDay.day - 1);
+                            if (prev) setSelectedCalendarDay(prev);
+                          }}
+                          className="px-3 py-2 rounded-xl bg-zinc-850 hover:bg-zinc-800 text-white text-xs font-semibold flex items-center gap-1 disabled:opacity-40 cursor-pointer"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                          <span>Dia Anterior</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={selectedCalendarDay.day >= 30}
+                          onClick={() => {
+                            const next = reelsResult.calendar.find((r) => r.day === selectedCalendarDay.day + 1);
+                            if (next) setSelectedCalendarDay(next);
+                          }}
+                          className="px-3 py-2 rounded-xl bg-zinc-850 hover:bg-zinc-800 text-white text-xs font-semibold flex items-center gap-1 disabled:opacity-40 cursor-pointer"
+                        >
+                          <span>Próximo Dia</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCopyReelDay(selectedCalendarDay)}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#ee4957]/25 transition-all cursor-pointer"
+                      >
+                        {copiedReelDay === selectedCalendarDay.day ? (
+                          <>
+                            <Check className="w-4 h-4 text-emerald-300" />
+                            <span>Roteiro Copiado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copiar Roteiro do Dia {selectedCalendarDay.day}</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Convite Comercial ao Final do Calendário */}
+              <div className="mt-10 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#181822] via-[#15151e] to-[#181822] border-2 border-[#ee4957]/50 space-y-4 text-center">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ee4957]/20 text-[#ee4957] text-xs font-bold uppercase tracking-wider">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Calendário de 30 Dias Gerado com Sucesso</span>
+                </div>
+
+                <h3 className="text-xl sm:text-3xl font-extrabold text-white font-heading max-w-2xl mx-auto">
+                  Gostou da estratégia? Desbloqueie o <span className="text-[#ee4957]">Mapa Completo</span>
+                </h3>
+
+                <p className="text-xs sm:text-sm text-zinc-300 max-w-2xl mx-auto leading-relaxed">
+                  Este calendário demonstrou a inteligência aplicada ao seu nicho. Para desbloquear o <strong>Diagnóstico de Posicionamento</strong>, <strong>Reescrita Magnética da Bio</strong>, <strong>Projeção de Novos Seguidores em 90 Dias</strong>, <strong>10 Carrosséis Estruturados</strong> e <strong>10 Sequências de Stories de Vendas</strong>, conheça nossos planos comerciais com liberação imediata via Hotmart.
+                </p>
+
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="px-6 py-3 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-[#ee4957]/25 transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    <span>Conhecer os Planos Oficiais</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('comparison')}
+                    className="px-5 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-[#ee4957]" />
+                    <span>Ver Comparativo Detalhado de Planos</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Deliverables Grid (O que você recebe) */}
       <section id="como-funciona" className="py-16 md:py-24 bg-zinc-100/60 dark:bg-[#0c0c10] border-y border-zinc-200 dark:border-zinc-800/80 transition-colors">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -809,39 +1269,8 @@ export const Home: React.FC<HomeProps> = ({
           ))}
         </div>
 
-        {/* Dual Banner: Demonstração Plano Essencial & Solicitação de Acesso Gratuito */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {/* Card 1: Demonstração Gratuita do Plano Essencial */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-[#ee4957]/10 via-white dark:via-[#131318] to-white dark:to-[#101014] border-2 border-[#ee4957]/50 text-left space-y-3.5 shadow-md flex flex-col justify-between">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ee4957]/15 text-[#ee4957] text-[11px] font-black uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Demonstração Gratuita</span>
-              </div>
-              <h3 className="text-xl font-bold text-zinc-900 dark:text-white font-heading">
-                Experimentar Plano Essencial
-              </h3>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-                Quer testar o potencial do Mapa de Conteúdo antes de contratar? Solicite a liberação manual pelo administrador e receba acesso para gerar sua análise estratégica completa.
-              </p>
-            </div>
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setDemoSubmitted(false);
-                  setDemoError('');
-                  setShowDemoModal(true);
-                }}
-                className="w-full py-3 px-5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#ee4957]/25 transition-all cursor-pointer"
-              >
-                <span>Experimentar Plano Essencial</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Card 2: Acesso Gratuito Avaliado */}
+        {/* Banner: Solicitação de Acesso Gratuito */}
+        <div className="mt-12 max-w-xl mx-auto">
           <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-[#121217] border border-zinc-200 dark:border-zinc-800 text-left space-y-3.5 shadow-sm flex flex-col justify-between">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-semibold">
@@ -895,10 +1324,20 @@ export const Home: React.FC<HomeProps> = ({
             <div className="p-4 rounded-xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 shadow-sm">
               <h4 className="font-bold text-zinc-900 dark:text-white flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-[#ee4957]" />
-                Como funciona a demonstração gratuita do Plano Essencial?
+                Como funciona a demonstração de 30 dias de Reels na página inicial?
               </h4>
               <p className="mt-2 text-zinc-600 dark:text-zinc-400 text-xs leading-relaxed">
-                Basta preencher seu nome e e-mail no formulário de demonstração. O administrador receberá a notificação para aprovação. Ao ser liberado, você recebe um convite individual com link seguro válido por 48 horas para criar sua senha e usar as funcionalidades do Plano Essencial sem custo.
+                Você informa o seu @ do Instagram e a inteligência artificial analisa seu perfil para identificar automaticamente o seu nicho. Após confirmar ou ajustar seu nicho, a plataforma gera instantaneamente 30 roteiros de Reels com ganchos de 3 segundos, estrutura de roteiro, CTAs e hashtags direcionadas, distribuídos entre os 7 pilares estratégicos de conteúdo.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white dark:bg-[#121216] border border-zinc-200 dark:border-zinc-800 shadow-sm">
+              <h4 className="font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-[#ee4957]" />
+                Como funciona o teste do Plano Essencial?
+              </h4>
+              <p className="mt-2 text-zinc-600 dark:text-zinc-400 text-xs leading-relaxed">
+                A liberação de demonstração de 7 dias do Plano Essencial é restrita e concedida exclusivamente pelo administrador no painel de gestão para parceiros convidados. O sistema gera um convite seguro e exclusivo por e-mail com validade de 48 horas para ativação. Visitantes comuns não solicitam o teste do Plano Essencial diretamente pelo site.
               </p>
             </div>
 
@@ -924,119 +1363,6 @@ export const Home: React.FC<HomeProps> = ({
           </div>
         </div>
       </section>
-
-      {/* Modal: Experimentar Plano Essencial */}
-      {showDemoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md bg-[#121217] border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-            <button
-              type="button"
-              onClick={() => setShowDemoModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-xl bg-zinc-850 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {demoSubmitted ? (
-              <div className="text-center space-y-4 py-4">
-                <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-white font-heading">
-                    Solicitação recebida! Aguarde a liberação do seu acesso.
-                  </h3>
-                  <p className="text-xs text-zinc-300 leading-relaxed">
-                    Seu pedido de demonstração gratuita do <strong>Plano Essencial</strong> foi registrado com sucesso. O administrador foi notificado e irá analisar sua liberação.
-                  </p>
-                  <p className="text-[11px] text-zinc-400">
-                    Você receberá um e-mail com link de ativação seguro de uso único para criar sua senha assim que aprovado.
-                  </p>
-                </div>
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowDemoModal(false)}
-                    className="w-full py-3 px-4 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
-                  >
-                    Entendido
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ee4957]/15 text-[#ee4957] text-[10px] font-black uppercase">
-                    <Sparkles className="w-3 h-3" />
-                    <span>Demonstração Gratuita</span>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white font-heading">
-                    Experimentar Plano Essencial
-                  </h3>
-                  <p className="text-xs text-zinc-400">
-                    Preencha os campos abaixo para solicitar ao administrador sua demonstração gratuita do Plano Essencial.
-                  </p>
-                </div>
-
-                {demoError && (
-                  <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-800/60 text-red-200 text-xs flex items-start gap-2.5">
-                    <AlertCircle className="w-4 h-4 text-[#ee4957] shrink-0 mt-0.5" />
-                    <span>{demoError}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleDemoSubmit} className="space-y-4 text-xs">
-                  <div>
-                    <label className="block text-zinc-300 font-semibold mb-1">
-                      Nome completo <span className="text-[#ee4957]">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={demoName}
-                      onChange={(e) => setDemoName(e.target.value)}
-                      placeholder="Ex: Maria Silva"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-[#ee4957]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-zinc-300 font-semibold mb-1">
-                      E-mail <span className="text-[#ee4957]">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={demoEmail}
-                      onChange={(e) => setDemoEmail(e.target.value)}
-                      placeholder="seu.email@exemplo.com"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-[#ee4957]"
-                    />
-                    <p className="mt-1 text-[11px] text-zinc-500">
-                      O convite seguro de ativação com validade de 48 horas será enviado para este e-mail.
-                    </p>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={demoSubmitting}
-                      className="w-full py-3.5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#ee4957]/25 transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>{demoSubmitting ? 'Enviando solicitação...' : 'Enviar Solicitação de Demonstração'}</span>
-                    </button>
-                  </div>
-                </form>
-
-                <p className="text-[10px] text-zinc-500 text-center">
-                  Não solicitamos dados de cartão de crédito. Liberação sujeita a aprovação manual.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

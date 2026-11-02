@@ -201,14 +201,42 @@ function saveDatabase(data: DatabaseSchema) {
   fs.renameSync(tempFile, DB_FILE);
 }
 
+function checkDemoExpirations(data: DatabaseSchema): boolean {
+  let changed = false;
+  const now = new Date();
+  if (data.users) {
+    for (const u of data.users) {
+      if (u.isDemo && u.demoStatus === 'active' && u.demoExpiresAt) {
+        if (now > new Date(u.demoExpiresAt)) {
+          u.demoStatus = 'expired';
+          changed = true;
+          if (u.demoRequestId && data.demoAccessRequests) {
+            const req = data.demoAccessRequests.find((r) => r.id === u.demoRequestId);
+            if (req && req.status === 'Aprovado') {
+              req.status = 'Encerrado';
+              req.updatedAt = now.toISOString();
+            }
+          }
+        }
+      }
+    }
+  }
+  if (changed) {
+    saveDatabase(data);
+  }
+  return changed;
+}
+
 export const db = {
   // Users
   getUserByEmail(email: string) {
     const data = loadDatabase();
+    checkDemoExpirations(data);
     return data.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
   },
   getUserById(id: string) {
     const data = loadDatabase();
+    checkDemoExpirations(data);
     return data.users.find((u) => u.id === id);
   },
   createUser(email: string, password: string, name: string): User {
@@ -761,6 +789,8 @@ export const db = {
       email: cleanEmail,
       planId: 'essencial',
       status: 'Aguardando aprovação',
+      durationDays: 7,
+      authorizedBy: 'Solicitação',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -770,8 +800,76 @@ export const db = {
     return newRequest;
   },
 
+  // Admin directly creates and authorizes demo access (7 calendar days)
+  createAdminDemoGrant(name: string, email: string, authorizedBy = 'Administrador'): { request: DemoAccessRequest; inviteToken: string } {
+    const data = loadDatabase();
+    if (!data.demoAccessRequests) data.demoAccessRequests = [];
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+
+    const token = crypto.randomBytes(24).toString('hex');
+    const newRequest: DemoAccessRequest = {
+      id: crypto.randomUUID(),
+      name: cleanName,
+      email: cleanEmail,
+      planId: 'essencial',
+      status: 'Aprovado',
+      durationDays: 7,
+      authorizedBy: authorizedBy || 'Administrador',
+      inviteToken: token,
+      inviteExpiresAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+      reviewedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    data.demoAccessRequests.unshift(newRequest);
+    saveDatabase(data);
+    return { request: newRequest, inviteToken: token };
+  },
+
+  prorrogarDemoAccess(id: string, additionalDays = 7): DemoAccessRequest {
+    const data = loadDatabase();
+    if (!data.demoAccessRequests) data.demoAccessRequests = [];
+
+    const req = data.demoAccessRequests.find((r) => r.id === id);
+    if (!req) {
+      throw new Error('Solicitação de demonstração não encontrada');
+    }
+
+    req.durationDays = (req.durationDays || 7) + additionalDays;
+    req.prorrogadoAt = new Date().toISOString();
+    req.status = 'Aprovado';
+    req.updatedAt = new Date().toISOString();
+
+    // If invite hasn't been used yet, extend the 48h activation window
+    if (!req.inviteUsedAt) {
+      req.inviteExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+    }
+
+    // Extend active expiration date by additionalDays
+    const currentExp = req.demoExpiresAt ? new Date(req.demoExpiresAt).getTime() : Date.now();
+    const baseTime = Math.max(Date.now(), currentExp);
+    const newExp = new Date(baseTime + additionalDays * 24 * 60 * 60 * 1000).toISOString();
+    req.demoExpiresAt = newExp;
+
+    if (req.userId) {
+      const u = data.users.find((user) => user.id === req.userId);
+      if (u) {
+        u.demoExpiresAt = newExp;
+        u.demoStatus = 'active';
+        u.activePlanId = 'essencial';
+      }
+    }
+
+    saveDatabase(data);
+    return req;
+  },
+
   getAllDemoAccessRequests(): DemoAccessRequest[] {
     const data = loadDatabase();
+    checkDemoExpirations(data);
     return data.demoAccessRequests || [];
   },
 
@@ -796,6 +894,8 @@ export const db = {
 
     const token = crypto.randomBytes(24).toString('hex');
     req.status = 'Aprovado';
+    req.durationDays = req.durationDays || 7;
+    req.authorizedBy = req.authorizedBy || 'Administrador';
     req.reviewedAt = new Date().toISOString();
     req.inviteToken = token;
     req.inviteExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
@@ -808,6 +908,9 @@ export const db = {
         u.isDemo = true;
         u.demoStatus = 'active';
         u.activePlanId = 'essencial';
+        if (!u.demoExpiresAt) {
+          u.demoExpiresAt = new Date(Date.now() + (req.durationDays || 7) * 24 * 60 * 60 * 1000).toISOString();
+        }
       }
     }
 
@@ -884,6 +987,9 @@ export const db = {
       throw new Error('O prazo de ativação deste convite expirou (48h). Solicite uma nova liberação.');
     }
 
+    const durationDays = req.durationDays || 7;
+    const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString();
+
     let existingUser = data.users.find((u) => u.email.toLowerCase() === req.email.toLowerCase());
     if (existingUser) {
       const { hash, salt } = hashPassword(password);
@@ -893,6 +999,7 @@ export const db = {
       existingUser.isDemo = true;
       existingUser.demoStatus = 'active';
       existingUser.demoRequestId = req.id;
+      existingUser.demoExpiresAt = expiresAt;
     } else {
       const { hash, salt } = hashPassword(password);
       const newUser = {
@@ -906,7 +1013,8 @@ export const db = {
         activePlanId: 'essencial',
         isDemo: true,
         demoStatus: 'active' as const,
-        demoRequestId: req.id
+        demoRequestId: req.id,
+        demoExpiresAt: expiresAt
       };
       data.users.push(newUser);
       existingUser = newUser;
@@ -914,6 +1022,7 @@ export const db = {
 
     req.inviteUsedAt = new Date().toISOString();
     req.activatedAt = new Date().toISOString();
+    req.demoExpiresAt = expiresAt;
     req.userId = existingUser.id;
     req.updatedAt = new Date().toISOString();
 
@@ -924,6 +1033,7 @@ export const db = {
 
   getDemoUsers(): User[] {
     const data = loadDatabase();
+    checkDemoExpirations(data);
     return data.users
       .filter((u) => u.isDemo)
       .map(({ passwordHash: _, salt: __, ...safeUser }) => safeUser);

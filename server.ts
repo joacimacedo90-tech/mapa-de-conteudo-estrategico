@@ -4,7 +4,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { db } from './server/db';
 import { fetchInstagramProfileData } from './server/metaInstagram';
-import { generateContentMapStrategy } from './server/gemini';
+import { generateContentMapStrategy, detectNicheFromInstagram, generatePublic30DaysReelsCalendar } from './server/gemini';
 import { handleHotmartWebhook } from './server/hotmart';
 import { sendClientDiagnosticEmail, isEmailConfigured, sendAdminDemoRequestNotification, sendDemoActivationEmail } from './server/email';
 import { Report, CalendarDay, ClientDiagnostic, DemoAccessRequest, ExecutionMetrics } from './src/types';
@@ -630,50 +630,85 @@ app.post('/api/free-access/activate', (req: Request, res: Response) => {
 });
 
 // ==========================================
-// SOLICITAÇÃO & ATIVAÇÃO DE DEMONSTRAÇÃO DO PLANO ESSENCIAL
+// DEMONSTRAÇÃO INTELIGENTE (PÚBLICA: NICHO & 30 DIAS DE REELS)
 // ==========================================
 
-// 1. Solicitar Demonstração do Plano Essencial (Público)
-app.post('/api/demo-access/request', async (req: Request, res: Response) => {
+// 1. Detectar Nicho Automaticamente pelo @ do Instagram
+app.post('/api/demo/detect-niche', async (req: Request, res: Response) => {
   try {
-    const { name, email } = req.body;
-    if (!name || typeof name !== 'string' || !name.trim()) {
-      return res.status(400).json({ error: 'O nome completo é obrigatório.' });
-    }
-    if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return res.status(400).json({ error: 'Um e-mail válido é obrigatório.' });
+    const { username, manualBio, manualCaptions } = req.body;
+    if (!username || typeof username !== 'string' || !username.trim()) {
+      return res.status(400).json({ error: 'O @ do Instagram é obrigatório para identificação do nicho.' });
     }
 
-    const cleanName = name.trim();
-    const cleanEmail = email.toLowerCase().trim();
+    const cleanUser = username.replace(/^@/, '').trim();
 
-    // Check if user already exists
-    const existingUser = db.getUserByEmail(cleanEmail);
-    if (existingUser) {
-      return res.status(400).json({
-        error: 'Este e-mail já possui uma conta cadastrada no sistema. Faça login para acessar seus relatórios.'
-      });
-    }
+    // 1. Check Meta Instagram Business Discovery
+    const metaCheck = await fetchInstagramProfileData(cleanUser);
+    const profileData = metaCheck.status === 'connected' ? metaCheck.data : undefined;
 
-    const request = db.createDemoAccessRequest(cleanName, cleanEmail);
-
-    // Send notification email to the administrator (asynchronously, with error isolation)
-    try {
-      await sendAdminDemoRequestNotification(request);
-      console.log(`[NOTIFICAÇÃO ADMIN DEMO ENVIADA] Solicitação de teste recebida de: ${cleanName} (${cleanEmail})`);
-    } catch (notifErr) {
-      console.warn('[AVISO] Não foi possível enviar e-mail imediato ao administrador:', notifErr);
-    }
+    // 2. Call Gemini for niche detection with retry and heuristics
+    const result = await detectNicheFromInstagram(cleanUser, profileData, manualBio, manualCaptions);
 
     res.json({
       success: true,
-      message: 'Solicitação recebida! Aguarde a liberação do seu acesso.',
-      request
+      data: result
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Erro ao registrar solicitação de demonstração';
-    res.status(400).json({ error: msg });
+    const msg = err instanceof Error ? err.message : 'Falha ao identificar o nicho do perfil.';
+    res.status(500).json({ error: msg });
   }
+});
+
+// 2. Gerar Calendário de 30 Dias (SOMENTE REELS)
+app.post('/api/demo/generate-30-reels', async (req: Request, res: Response) => {
+  try {
+    const { username, confirmedNiche, segment, targetAudience } = req.body;
+    if (!username || typeof username !== 'string' || !username.trim()) {
+      return res.status(400).json({ error: 'O @ do Instagram é obrigatório.' });
+    }
+
+    const cleanUser = username.replace(/^@/, '').trim();
+    let finalNiche = confirmedNiche && typeof confirmedNiche === 'string' ? confirmedNiche.trim() : '';
+
+    if (!finalNiche) {
+      // Auto-detect niche from Instagram profile in background
+      try {
+        const metaCheck = await fetchInstagramProfileData(cleanUser);
+        const profileData = metaCheck.status === 'connected' ? metaCheck.data : undefined;
+        const detected = await detectNicheFromInstagram(cleanUser, profileData);
+        finalNiche = detected.detectedNiche || 'Especialista & Criador de Conteúdo';
+      } catch {
+        finalNiche = 'Especialista & Criador de Conteúdo';
+      }
+    }
+
+    const result = await generatePublic30DaysReelsCalendar({
+      username: cleanUser,
+      confirmedNiche: finalNiche,
+      segment: segment ? String(segment).trim() : undefined,
+      targetAudience: targetAudience ? String(targetAudience).trim() : undefined
+    });
+
+    res.json({
+      success: true,
+      demo: result
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Falha ao gerar calendário de 30 dias de Reels.';
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ==========================================
+// SOLICITAÇÃO & ATIVAÇÃO DE DEMONSTRAÇÃO DO PLANO ESSENCIAL
+// ==========================================
+
+// Solicitação pública desativada: concedida exclusivamente pelo administrador
+app.post('/api/demo-access/request', async (_req: Request, res: Response) => {
+  return res.status(403).json({
+    error: 'A solicitação pública de demonstração foi desativada. O teste do Plano Essencial é liberado exclusivamente pelo administrador.'
+  });
 });
 
 // 2. Verificar validade do convite de demonstração do Plano Essencial
@@ -1111,6 +1146,66 @@ app.post('/api/admin/free-access-requests/:id/reject', requireAdmin, (req: Reque
 app.get('/api/admin/demo-access-requests', requireAdmin, (_req: Request, res: Response) => {
   const requests = db.getAllDemoAccessRequests();
   res.json({ requests });
+});
+
+// Admin: Liberar Teste Essencial diretamente (7 dias corridos)
+app.post('/api/admin/demo-grants/create', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { name, email } = req.body;
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'O nome completo do interessado é obrigatório.' });
+    }
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ error: 'Um e-mail válido é obrigatório.' });
+    }
+
+    const cleanName = name.trim();
+    const cleanEmail = email.toLowerCase().trim();
+
+    const result = db.createAdminDemoGrant(cleanName, cleanEmail, 'Administrador');
+
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    const inviteUrl = `${baseUrl}/?page=ativar-conta&type=demo&token=${result.inviteToken}`;
+
+    let emailStatus = 'sent';
+    try {
+      await sendDemoActivationEmail(result.request, inviteUrl);
+      console.log(`[E-MAIL CONVITE DEMO ENVIADO] Para: ${result.request.email} | URL: ${inviteUrl}`);
+    } catch (emailErr) {
+      console.warn('[AVISO] Falha ao enviar e-mail de ativação:', emailErr);
+      emailStatus = 'failed_to_deliver';
+    }
+
+    res.json({
+      success: true,
+      message: `Teste do Plano Essencial (7 dias corridos) liberado para ${result.request.name}! Link seguro gerado com validade de 48 horas para ativação.`,
+      request: result.request,
+      inviteUrl,
+      inviteToken: result.inviteToken,
+      emailStatus
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao liberar teste essencial';
+    res.status(400).json({ error: msg });
+  }
+});
+
+// Admin: Prorrogar Teste Essencial (+7 dias corridos)
+app.post('/api/admin/demo-grants/:id/prorrogar', requireAdmin, (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const additionalDays = Number(req.body.additionalDays) || 7;
+    const request = db.prorrogarDemoAccess(id, additionalDays);
+
+    res.json({
+      success: true,
+      message: `Acesso de demonstração prorrogado com sucesso por mais ${additionalDays} dias corridos!`,
+      request
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Erro ao prorrogar demonstração';
+    res.status(400).json({ error: msg });
+  }
 });
 
 // Admin: Approve a Demo Access Request and generate one-time invite (48h)

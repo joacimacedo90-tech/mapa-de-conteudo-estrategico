@@ -9,6 +9,7 @@ export interface User {
   isDemo?: boolean;
   demoStatus?: 'active' | 'blocked' | 'expired';
   demoRequestId?: string;
+  demoExpiresAt?: string;
 }
 
 export interface MetaProfileData {
@@ -328,13 +329,65 @@ export interface DemoAccessRequest {
   status: 'Aguardando aprovação' | 'Aprovado' | 'Recusado' | 'Bloqueado' | 'Encerrado';
   createdAt: string;
   updatedAt: string;
+  durationDays: number;
+  authorizedBy: string;
   reviewedAt?: string;
   rejectionReason?: string;
   inviteToken?: string;
   inviteExpiresAt?: string;
   inviteUsedAt?: string;
   activatedAt?: string;
+  demoExpiresAt?: string;
+  prorrogadoAt?: string;
   userId?: string;
+}
+
+export interface NicheDetectionResult {
+  username: string;
+  detectedNiche: string;
+  segment: string;
+  targetAudience: string;
+  contentStyle: string;
+  confidence: 'high' | 'medium' | 'low';
+  summary: string;
+  profileFound: boolean;
+}
+
+export type ReelStrategicObjective =
+  | 'Autoridade'
+  | 'Educação'
+  | 'Identificação com o público'
+  | 'Quebra de objeções'
+  | 'Prova de conhecimento'
+  | 'Engajamento'
+  | 'Conversão e vendas';
+
+export interface PublicReelsCalendarDay {
+  day: number;
+  theme: string;
+  strategicObjective: ReelStrategicObjective;
+  hook3s: string;
+  scriptStructure: string;
+  contentDevelopment: string;
+  cta: string;
+  suggestedCaption: string;
+  hashtags: string[];
+}
+
+export interface PublicReelsDemoResult {
+  username: string;
+  confirmedNiche: string;
+  segment?: string;
+  targetAudience?: string;
+  generatedAt: string;
+  totalDays: 30;
+  calendar: PublicReelsCalendarDay[];
+  metrics: {
+    durationMs: number;
+    fromCache: boolean;
+    modelUsed: string;
+    isFallback?: boolean;
+  };
 }
 
 

@@ -190,16 +190,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ reportId, onNavigate }) 
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
 
-            <button
-              type="button"
-              onClick={() => onNavigate('home')}
-              className="w-full mt-2.5 py-2.5 px-3 rounded-xl bg-[#ee4957]/10 hover:bg-[#ee4957]/20 border border-[#ee4957]/30 text-[#ee4957] font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer text-center"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Experimentar Demonstração Gratuita</span>
-            </button>
-
-            <p className="text-[10px] text-zinc-400 text-center mt-2">
+            <p className="text-[10px] text-zinc-400 text-center mt-2.5">
               Pagamento único via Hotmart
             </p>
           </div>

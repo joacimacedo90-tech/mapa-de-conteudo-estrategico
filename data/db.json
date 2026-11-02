@@ -7266,6 +7266,22 @@
   "clientDiagnostics": [],
   "demoAccessRequests": [
     {
+      "id": "1577447e-b90c-4536-9140-7ba1aa9c8c3f",
+      "name": "Dra. Roberta Nutricionista",
+      "email": "roberta@exemplo.com",
+      "planId": "essencial",
+      "status": "Aprovado",
+      "durationDays": 14,
+      "authorizedBy": "Administrador",
+      "inviteToken": "901b395487c361be50007d9ce0babe4e631e9637230371db",
+      "inviteExpiresAt": "2026-11-04T11:19:45.800Z",
+      "reviewedAt": "2026-11-02T11:19:45.766Z",
+      "createdAt": "2026-11-02T11:19:45.766Z",
+      "updatedAt": "2026-11-02T11:19:45.800Z",
+      "prorrogadoAt": "2026-11-02T11:19:45.800Z",
+      "demoExpiresAt": "2026-11-09T11:19:45.800Z"
+    },
+    {
       "id": "abc9d66c-99b8-4445-81ad-aedfbbeee922",
       "name": "Mariana Souza",
       "email": "mariana.teste.1793542611199@teste.com",

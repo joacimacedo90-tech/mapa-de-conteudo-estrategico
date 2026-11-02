@@ -1,4 +1,4 @@
-import { User, Report, PricingPlan, AdminSettings, WebhookLog, MetaDiscoveryResult, FreeAccessRequest, ClientDiagnostic, DemoAccessRequest, ExecutionMetrics } from './types';
+import { User, Report, PricingPlan, AdminSettings, WebhookLog, MetaDiscoveryResult, FreeAccessRequest, ClientDiagnostic, DemoAccessRequest, ExecutionMetrics, NicheDetectionResult, PublicReelsDemoResult } from './types';
 
 const TOKEN_KEY = 'mapa_auth_token';
 const ADMIN_TOKEN_KEY = 'mapa_admin_token';
@@ -353,7 +353,31 @@ export const api = {
     });
   },
 
-  // Testes do Plano Essencial (Demonstração Gratuita)
+  // Demonstração Pública Inteligente (Identificação de Nicho & 30 Dias de Reels)
+  async detectNiche(payload: {
+    username: string;
+    manualBio?: string;
+    manualCaptions?: string;
+  }): Promise<{ success: boolean; data: NicheDetectionResult }> {
+    return request('/api/demo/detect-niche', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async generate30DaysReelsDemo(payload: {
+    username: string;
+    confirmedNiche?: string;
+    segment?: string;
+    targetAudience?: string;
+  }): Promise<{ success: boolean; demo: PublicReelsDemoResult }> {
+    return request('/api/demo/generate-30-reels', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  // Testes do Plano Essencial (Demonstração Essencial Privada)
   async requestDemoAccess(payload: { name: string; email: string }): Promise<{
     success: boolean;
     message: string;
@@ -395,6 +419,31 @@ export const api = {
 
   async getAdminDemoRequests(): Promise<{ requests: DemoAccessRequest[] }> {
     return request('/api/admin/demo-access-requests');
+  },
+
+  async adminCreateDemoGrant(payload: { name: string; email: string }): Promise<{
+    success: boolean;
+    message: string;
+    request: DemoAccessRequest;
+    inviteUrl: string;
+    inviteToken: string;
+    emailStatus?: string;
+  }> {
+    return request('/api/admin/demo-grants/create', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async adminProrrogarDemo(id: string, additionalDays = 7): Promise<{
+    success: boolean;
+    message: string;
+    request: DemoAccessRequest;
+  }> {
+    return request(`/api/admin/demo-grants/${id}/prorrogar`, {
+      method: 'POST',
+      body: JSON.stringify({ additionalDays })
+    });
   },
 
   async adminApproveDemoRequest(id: string): Promise<{

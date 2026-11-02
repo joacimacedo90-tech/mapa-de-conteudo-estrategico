@@ -7,7 +7,11 @@ import {
   StorySequence,
   HooksAndCtas,
   CalendarDay,
-  MetaProfileData
+  MetaProfileData,
+  NicheDetectionResult,
+  PublicReelsCalendarDay,
+  PublicReelsDemoResult,
+  ReelStrategicObjective
 } from '../src/types';
 
 const ai = new GoogleGenAI({
@@ -874,4 +878,463 @@ function completeTo90DaysCalendar(raw: CalendarDay[], params: GenerateParams): C
   }
 
   return fullCal;
+}
+
+// ========================================================
+// DEMONSTRAÇÃO INTELIGENTE: IDENTIFICAÇÃO DE NICHO & REELS
+// ========================================================
+
+async function callGeminiWithRetry<T>(callFn: () => Promise<T>, maxRetries = 2): Promise<T> {
+  let attempt = 0;
+  let delay = 1000;
+  while (true) {
+    try {
+      return await callFn();
+    } catch (err: unknown) {
+      attempt++;
+      const errStr = err instanceof Error ? err.message : String(err);
+      const is503OrOverloaded =
+        errStr.includes('503') ||
+        errStr.includes('overloaded') ||
+        errStr.includes('RESOURCE_EXHAUSTED') ||
+        errStr.includes('UNAVAILABLE') ||
+        errStr.includes('rate limit');
+
+      if (is503OrOverloaded && attempt <= maxRetries) {
+        console.warn(
+          `[GEMINI_503_RETRY] Modelo temporariamente sobrecarregado (503/rate limit). Tentativa ${attempt} de ${maxRetries} aguardando ${delay}ms...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay *= 2;
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+/**
+ * Identifica automaticamente o nicho do perfil a partir de dados da Meta ou biografia informada.
+ */
+export async function detectNicheFromInstagram(
+  username: string,
+  profileData?: MetaProfileData,
+  manualBio?: string,
+  manualCaptions?: string
+): Promise<NicheDetectionResult> {
+  const cleanUser = username.replace(/^@/, '').trim();
+  const bio = profileData?.biography || manualBio || '';
+  const captions = profileData?.recentCaptions?.join('\n') || manualCaptions || '';
+  const fullName = profileData?.name || '';
+  const profileFound = Boolean(profileData?.biography || profileData?.name || (profileData?.followersCount && profileData.followersCount > 0));
+
+  const prompt = `
+Você é um estrategista sênior de posicionamento no Instagram.
+Analise os dados públicos do perfil @${cleanUser} e identifique com precisão o nicho de atuação e público.
+
+DADOS DISPONÍVEIS:
+- Nome de Usuário: @${cleanUser}
+- Nome no Perfil: "${fullName}"
+- Biografia: "${bio.slice(0, 400)}"
+- Amostra de legendas recentes: "${captions.slice(0, 500)}"
+
+INSTRUÇÃO:
+Responda ESTRITAMENTE em JSON válido, com a seguinte estrutura:
+{
+  "detectedNiche": "Nome claro e objetivo do nicho principal (ex: Nutrição Clínica & Emagrecimento, Odontologia Estética, Advocacia Trabalhista, Arquitetura Residencial)",
+  "segment": "Segmento específico ou subnicho de atuação",
+  "targetAudience": "Descrição concisa de quem é o público-alvo prioritário e comprador",
+  "contentStyle": "Estilo de comunicação recomendado (ex: Educativo de autoridade, Humanizado prático, Dinâmico)",
+  "confidence": "high", // "high" se bio/legendas forem claras, "medium" se deduzido pelo @ e contexto, "low" se for perfil vago
+  "summary": "1 ou 2 frases resumindo porque esse nicho foi identificado e o potencial de posicionamento"
+}
+`;
+
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY_NOT_CONFIGURED');
+    }
+
+    const geminiCall = async () => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          systemInstruction: 'Você é um analisador cirúrgico de nichos para Instagram. Retorne apenas JSON válido.',
+          responseMimeType: 'application/json'
+        }
+      });
+      const text = response.text?.trim() || '';
+      const cleanJson = text.replace(/^```json/i, '').replace(/```$/i, '').trim();
+      return JSON.parse(cleanJson);
+    };
+
+    const parsed = await callGeminiWithRetry(geminiCall, 2);
+
+    return {
+      username: cleanUser,
+      detectedNiche: parsed.detectedNiche || 'Estratégia e Posicionamento Digital',
+      segment: parsed.segment || 'Serviços Profissionais & Consultoria',
+      targetAudience: parsed.targetAudience || 'Profissionais e clientes qualificados que buscam transformação no nicho',
+      contentStyle: parsed.contentStyle || 'Educativo com autoridade e quebra de objeções',
+      confidence: parsed.confidence || (profileFound ? 'high' : 'medium'),
+      summary: parsed.summary || `Perfil @${cleanUser} analisado com foco em posicionamento estratégico de autoridade e conversão.`,
+      profileFound
+    };
+  } catch (err) {
+    console.warn(`[DETECT_NICHE_FALLBACK] Utilizando heurística inteligente para @${cleanUser} devido a:`, err instanceof Error ? err.message : err);
+
+    // Heuristic inference based on bio or username keywords
+    const combined = `${cleanUser} ${fullName} ${bio} ${captions}`.toLowerCase();
+    let detectedNiche = 'Posicionamento & Negócios';
+    let segment = 'Consultoria & Serviços';
+    let targetAudience = 'Seguidores que buscam soluções práticas e contratação de serviços';
+
+    if (combined.match(/nutri|dieta|emagrec|saude|alimenta/)) {
+      detectedNiche = 'Nutrição Clínica & Emagrecimento';
+      segment = 'Saúde e Qualidade de Vida';
+      targetAudience = 'Pessoas que desejam emagrecer com saúde sem dietas restritivas';
+    } else if (combined.match(/advog|jurid|direito|oab|trabalh|civil/)) {
+      detectedNiche = 'Direito & Advocacia Especializada';
+      segment = 'Assessoria Jurídica e Direitos';
+      targetAudience = 'Clientes que necessitam de orientação jurídica preventiva e contenciosa';
+    } else if (combined.match(/arq|interiores|decor|projeto|reforma/)) {
+      detectedNiche = 'Arquitetura & Interiores';
+      segment = 'Projetos Residenciais e Comerciais';
+      targetAudience = 'Proprietários que buscam conforto, estética e valorização do imóvel';
+    } else if (combined.match(/odonto|dent|sorriso|invisalign|harmoniz/)) {
+      detectedNiche = 'Odontologia & Estética Dental';
+      segment = 'Saúde Bucal e Alinhadores';
+      targetAudience = 'Pacientes que desejam transformar o sorriso e recuperar autoestima';
+    } else if (combined.match(/psi|terapia|mente|ansiedade|emocional/)) {
+      detectedNiche = 'Psicologia & Saúde Mental';
+      segment = 'Terapia Cognitivo-Comportamental';
+      targetAudience = 'Adultos que enfrentam ansiedade, estresse e buscam clareza emocional';
+    } else if (combined.match(/imob|corretor|imovel|apartamento|terreno/)) {
+      detectedNiche = 'Mercado Imobiliário de Alto Padrão';
+      segment = 'Venda e Locação de Imóveis';
+      targetAudience = 'Compradores e investidores em busca de patrimônio sólido';
+    } else if (combined.match(/beleza|cabelo|estetica|pele|sobrancelha/)) {
+      detectedNiche = 'Estética Avançada & Beleza';
+      segment = 'Procedimentos Faciais e Bem-Estar';
+      targetAudience = 'Mulheres e homens focados em rejuvenescimento e cuidados pessoais';
+    }
+
+    return {
+      username: cleanUser,
+      detectedNiche,
+      segment,
+      targetAudience,
+      contentStyle: 'Educativo, humanizado e focado em autoridade',
+      confidence: 'medium',
+      summary: `Identificamos indícios do nicho "${detectedNiche}" para @${cleanUser}. Você pode confirmar ou ajustar abaixo antes de gerar o calendário.`,
+      profileFound
+    };
+  }
+}
+
+const STRATEGIC_PILLARS: ReelStrategicObjective[] = [
+  'Autoridade',
+  'Educação',
+  'Identificação com o público',
+  'Quebra de objeções',
+  'Prova de conhecimento',
+  'Engajamento',
+  'Conversão e vendas'
+];
+
+/**
+ * Gera exclusivamente 30 dias de Reels para o nicho confirmado
+ */
+export async function generatePublic30DaysReelsCalendar(params: {
+  username: string;
+  confirmedNiche: string;
+  segment?: string;
+  targetAudience?: string;
+}): Promise<PublicReelsDemoResult> {
+  const tStart = Date.now();
+  const cleanUser = params.username.replace(/^@/, '').trim();
+  const niche = params.confirmedNiche.trim();
+  const segment = params.segment || 'Serviços e Atendimento Especializado';
+  const audience = params.targetAudience || 'Público comprador qualificado';
+
+  const prompt = `
+Você é o estrategista especialista em Instagram Reels do MAPA DE CONTEÚDO.
+Crie um calendário editorial completo de EXATAMENTE 30 DIAS DE REELS para o perfil @${cleanUser}.
+
+INFORMAÇÕES CONFIRMADAS PELO CLIENTE:
+- Perfil: @${cleanUser}
+- Nicho Confirmado: "${niche}"
+- Segmento: "${segment}"
+- Público-Alvo: "${audience}"
+
+REGRAS OBRIGATÓRIAS E INEGOCIÁVEIS:
+1. TODOS OS 30 DIAS DEVEM SER EXCLUSIVAMENTE NO FORMATO REELS. Não inclua Stories, nem Carrosséis, nem Posts Estáticos.
+2. Cada dia deve ter uma distribuição variada e equilibrada entre os 7 pilares estratégicos:
+   - "Autoridade"
+   - "Educação"
+   - "Identificação com o público"
+   - "Quebra de objeções"
+   - "Prova de conhecimento"
+   - "Engajamento"
+   - "Conversão e vendas"
+3. Para CADA UM DOS 30 DIAS, forneça rigorosamente:
+   - "day": número de 1 a 30
+   - "theme": Tema específico e não genérico do Reel dentro do nicho
+   - "strategicObjective": um dos 7 pilares citados acima
+   - "hook3s": Gancho inicial magnético para prender nos 3 primeiros segundos (visual e verbal)
+   - "scriptStructure": Roteiro/estrutura detalhada do que falar no vídeo (Abertura, Quebra, Desenvolvimento e Fechamento)
+   - "contentDevelopment": Sugestão de desenvolvimento do conteúdo e encenação na gravação
+   - "cta": Chamada para ação clara e direta (ex: comentar palavra-chave, mandar DM, salvar)
+   - "suggestedCaption": Legenda sugerida completa pronta para postar
+   - "hashtags": array com 5 a 8 hashtags altamente relevantes do nicho
+
+Retorne ESTRITAMENTE um JSON com esta estrutura:
+{
+  "calendar": [
+    {
+      "day": 1,
+      "theme": "...",
+      "strategicObjective": "Autoridade",
+      "hook3s": "...",
+      "scriptStructure": "...",
+      "contentDevelopment": "...",
+      "cta": "...",
+      "suggestedCaption": "...",
+      "hashtags": ["#...", "#..."]
+    }
+    // ... exatamente 30 itens, do dia 1 ao 30
+  ]
+}
+`;
+
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY_NOT_CONFIGURED');
+    }
+
+    const geminiCall = async () => {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          systemInstruction:
+            'Você é um roteirista de alta conversão de Instagram Reels. Gere 30 dias de Reels em JSON válido, com temas hiper-específicos para o nicho informado.',
+          responseMimeType: 'application/json'
+        }
+      });
+      const text = response.text?.trim() || '';
+      const cleanJson = text.replace(/^```json/i, '').replace(/```$/i, '').trim();
+      return JSON.parse(cleanJson);
+    };
+
+    const parsed = await callGeminiWithRetry(geminiCall, 2);
+
+    let days: PublicReelsCalendarDay[] = parsed.calendar || [];
+
+    // Safety validate and ensure 30 days
+    if (!Array.isArray(days) || days.length < 30) {
+      console.warn(`[REELS_GEN] Retornou ${days?.length || 0} dias. Completando até 30 dias com o motor algorítmico do nicho.`);
+      days = completeTo30Reels(days, cleanUser, niche, audience);
+    } else {
+      // Normalize days numbers and objectives
+      days = days.slice(0, 30).map((d, idx) => ({
+        day: idx + 1,
+        theme: d.theme || `Estratégia prática para ${niche}`,
+        strategicObjective: STRATEGIC_PILLARS.includes(d.strategicObjective as ReelStrategicObjective)
+          ? (d.strategicObjective as ReelStrategicObjective)
+          : STRATEGIC_PILLARS[idx % STRATEGIC_PILLARS.length],
+        hook3s: d.hook3s || 'Pare de perder tempo com o que não dá resultado no seu perfil...',
+        scriptStructure: d.scriptStructure || 'Gancho de 3s + Apresentação do erro + Solução rápida + Chamada de ação direta.',
+        contentDevelopment: d.contentDevelopment || 'Grave em plano médio olhando firme para a câmera, com iluminação frontal.',
+        cta: d.cta || 'Comente a sua dúvida aqui embaixo para eu te responder!',
+        suggestedCaption: d.suggestedCaption || `Aplique esse método hoje mesmo no seu dia a dia em ${niche}. Salve para não esquecer!`,
+        hashtags: Array.isArray(d.hashtags) && d.hashtags.length > 0 ? d.hashtags : [`#${niche.toLowerCase().replace(/[^a-z0-9]/g, '')}`, '#conteudoestrategico', '#reelsbrasil']
+      }));
+    }
+
+    return {
+      username: cleanUser,
+      confirmedNiche: niche,
+      segment,
+      targetAudience: audience,
+      generatedAt: new Date().toISOString(),
+      totalDays: 30,
+      calendar: days,
+      metrics: {
+        durationMs: Date.now() - tStart,
+        fromCache: false,
+        modelUsed: 'gemini-2.5-flash',
+        isFallback: false
+      }
+    };
+  } catch (err) {
+    console.warn(`[REELS_FALLBACK] Ativando gerador estrutural de 30 Reels para ${niche} devido a:`, err instanceof Error ? err.message : err);
+
+    const fallbackDays = generateFallback30Reels(cleanUser, niche, audience);
+
+    return {
+      username: cleanUser,
+      confirmedNiche: niche,
+      segment,
+      targetAudience: audience,
+      generatedAt: new Date().toISOString(),
+      totalDays: 30,
+      calendar: fallbackDays,
+      metrics: {
+        durationMs: Date.now() - tStart,
+        fromCache: false,
+        modelUsed: 'deterministic-niche-engine',
+        isFallback: true
+      }
+    };
+  }
+}
+
+/**
+ * Gerador de fallback robusto para garantir que 30 dias de Reels de alto nível
+ * sejam SEMPRE entregues com perfeição mesmo se a API do Gemini der 503 temporário.
+ */
+function generateFallback30Reels(
+  username: string,
+  niche: string,
+  audience: string
+): PublicReelsCalendarDay[] {
+  const days: PublicReelsCalendarDay[] = [];
+
+  const themesAndHooks: Array<{
+    theme: string;
+    objective: ReelStrategicObjective;
+    hook3s: string;
+    script: string;
+    dev: string;
+    cta: string;
+    caption: string;
+  }> = [
+    {
+      theme: `O maior erro que vejo cometerem em ${niche}`,
+      objective: 'Autoridade',
+      hook3s: `Se você busca resultados em ${niche}, pare de fazer exatamente isso...`,
+      script: '0-3s: Gancho direto com corte seco | 3-15s: Explique por que 90% das pessoas erram nisso | 15-30s: Revele a alternativa correta e validada | 30-40s: CTA para direct.',
+      dev: 'Grave falando diretamente para a lente, com expressão firme e texto sobreposto na tela nos primeiros 3 segundos.',
+      cta: 'Comente "CORRIGIR" que eu te envio o passo a passo completo no direct.',
+      caption: `A maioria das pessoas perde tempo insistindo em métodos ultrapassados em ${niche}. Entenda o porquê e como virar essa chave hoje mesmo.`
+    },
+    {
+      theme: `Passo a passo simples para aplicar no dia a dia`,
+      objective: 'Educação',
+      hook3s: `Faça isso em 3 minutos se você quer destravar em ${niche}...`,
+      script: '0-3s: Gancho prático com o celular na mão | 3-20s: 3 passos enumerados com gestos de mão | 20-35s: Demonstração rápida do efeito | 35-45s: Salve o vídeo.',
+      dev: 'Demonstre na prática com objetos ou tela de computador/celular em mãos para gerar dinamismo.',
+      cta: 'Toque em Salvar para consultar esse checklist quando for executar.',
+      caption: `Você não precisa complicar. Quando você aplica esses 3 fundamentos em ${niche}, a evolução fica nítida.`
+    },
+    {
+      theme: `Você também sente essa dificuldade no seu dia a dia?`,
+      objective: 'Identificação com o público',
+      hook3s: `Você já teve a sensação de tentar de tudo e parecer que está estagnado?`,
+      script: '0-3s: Frase empática conectando com a dor de ${audience} | 3-18s: Conte como você ou um cliente vivia essa mesma situação | 18-35s: O momento da virada | 35-45s: Pergunta aberta.',
+      dev: 'Cenário aconchegante, tom de voz acolhedor e pausado, como em uma conversa de café.',
+      cta: 'Deixe um comentário: você também já passou por isso?',
+      caption: `Não é falta de capacidade, é falta do método correto para a sua realidade. Você não está sozinho nessa jornada.`
+    },
+    {
+      theme: `Por que você NÃO precisa gastar rios de dinheiro para começar`,
+      objective: 'Quebra de objeções',
+      hook3s: `Disseram que você precisa de muito investimento para ter resultado em ${niche}? Mentiram para você.`,
+      script: '0-3s: Quebra de mito incisiva | 3-20s: Liste os 2 pontos que realmente movem o ponteiro sem gastar nada | 20-35s: Onde a maioria desperdiça dinheiro | 35-45s: CTA.',
+      dev: 'Uso de legenda dinâmica em alta velocidade e cortes a cada 3 a 4 segundos para reter atenção.',
+      cta: 'Compartilhe com um amigo que precisa ouvir essa verdade hoje.',
+      caption: `Mais importante que recursos financeiros extravagantes é dominar os princípios de base de ${niche}.`
+    },
+    {
+      theme: `Análise técnica de um caso real de transformação`,
+      objective: 'Prova de conhecimento',
+      hook3s: `Olhe o que aconteceu quando mudamos apenas esse detalhe...`,
+      script: '0-3s: Apresente o resultado antes/depois | 3-18s: Diagnóstico do problema original | 18-32s: A intervenção técnica aplicada | 32-45s: O ensinamento geral.',
+      dev: 'Mostre dados, telas, produtos ou bastidores reais que comprovem seu domínio.',
+      cta: 'Quer que eu analise o seu caso? Mande uma mensagem no Direct.',
+      caption: `Os números e fatos não mentem. Técnica aplicada com consistência sempre supera palpites soltos.`
+    },
+    {
+      theme: `Qual dessas duas abordagens você prefere?`,
+      objective: 'Engajamento',
+      hook3s: `Opção A ou Opção B? Me diga qual faz mais sentido para você...`,
+      script: '0-3s: Pergunta polarizada rápida | 3-15s: Prós e contras da Opção 1 | 15-28s: Prós e contras da Opção 2 | 28-35s: Seu veredito de especialista | 35-40s: Votação.',
+      dev: 'Vídeo rápido, apontando para o lado esquerdo e direito da tela onde aparecem os textos A e B.',
+      cta: 'Vote nos comentários: você é do time A ou do time B?',
+      caption: `Um dilema clássico em ${niche}. Deixe o seu voto sincero nos comentários!`
+    },
+    {
+      theme: `Vagas abertas e como funciona o acompanhamento exclusivo`,
+      objective: 'Conversão e vendas',
+      hook3s: `Se você quer resolver isso de vez nos próximos 30 dias, assista até o final...`,
+      script: '0-3s: Filtro de qualificação de público | 3-20s: Apresentação da solução e entregáveis | 20-35s: Para quem é e para quem não é | 35-45s: Chamada para ação na DM.',
+      dev: 'Vestimenta alinhada, postura executiva de autoridade e chamada clara sem rodeios.',
+      cta: 'Envie a palavra "PLANO" no meu Direct para receber as condições de acesso.',
+      caption: `As vagas para o nosso direcionamento individual estão abertas por tempo limitado. Envie uma mensagem privada para garantir a sua.`
+    }
+  ];
+
+  for (let i = 1; i <= 30; i++) {
+    const base = themesAndHooks[(i - 1) % themesAndHooks.length];
+    const objective = STRATEGIC_PILLARS[(i - 1) % STRATEGIC_PILLARS.length];
+
+    const cleanNicheTag = niche.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const hashtags = [
+      `#${cleanNicheTag}`,
+      `#${cleanNicheTag}brasil`,
+      `#reels${cleanNicheTag}`,
+      '#posicionamentoestrategico',
+      '#mapadeconteudo',
+      '#crescimentoinstagram'
+    ];
+
+    days.push({
+      day: i,
+      theme: `Dia ${i}: ${base.theme} (Etapa ${Math.ceil(i / 10)})`,
+      strategicObjective: objective,
+      hook3s: base.hook3s,
+      scriptStructure: base.script,
+      contentDevelopment: base.dev,
+      cta: base.cta,
+      suggestedCaption: base.caption,
+      hashtags
+    });
+  }
+
+  return days;
+}
+
+function completeTo30Reels(
+  existing: Partial<PublicReelsCalendarDay>[],
+  username: string,
+  niche: string,
+  audience: string
+): PublicReelsCalendarDay[] {
+  const fallback = generateFallback30Reels(username, niche, audience);
+  const result: PublicReelsCalendarDay[] = [];
+
+  for (let i = 1; i <= 30; i++) {
+    const found = existing.find((d) => d.day === i);
+    if (found && found.theme && found.hook3s) {
+      result.push({
+        day: i,
+        theme: found.theme,
+        strategicObjective: STRATEGIC_PILLARS.includes(found.strategicObjective as ReelStrategicObjective)
+          ? (found.strategicObjective as ReelStrategicObjective)
+          : STRATEGIC_PILLARS[(i - 1) % STRATEGIC_PILLARS.length],
+        hook3s: found.hook3s,
+        scriptStructure: found.scriptStructure || fallback[i - 1].scriptStructure,
+        contentDevelopment: found.contentDevelopment || fallback[i - 1].contentDevelopment,
+        cta: found.cta || fallback[i - 1].cta,
+        suggestedCaption: found.suggestedCaption || fallback[i - 1].suggestedCaption,
+        hashtags: found.hashtags && found.hashtags.length > 0 ? found.hashtags : fallback[i - 1].hashtags
+      });
+    } else {
+      result.push(fallback[i - 1]);
+    }
+  }
+
+  return result;
 }
