@@ -7,7 +7,7 @@ import { fetchInstagramProfileData } from './server/metaInstagram';
 import { generateContentMapStrategy, detectNicheFromInstagram, generatePublic30DaysReelsCalendar } from './server/gemini';
 import { handleHotmartWebhook } from './server/hotmart';
 import { sendClientDiagnosticEmail, isEmailConfigured, sendAdminDemoRequestNotification, sendDemoActivationEmail } from './server/email';
-import { Report, CalendarDay, ClientDiagnostic, DemoAccessRequest, ExecutionMetrics } from './src/types';
+import { Report, CalendarDay, ClientDiagnostic, DemoAccessRequest, ExecutionMetrics, MetaProfileData } from './src/types';
 
 dotenv.config();
 
@@ -148,7 +148,7 @@ app.post('/api/reports/generate', async (req: Request, res: Response) => {
       totalMs,
       fromCache: strategy.executionMetrics?.fromCache || false,
       isFallback: strategy.executionMetrics?.isFallback || false,
-      modelUsed: strategy.executionMetrics?.modelUsed || 'gemini-2.5-flash'
+      modelUsed: strategy.executionMetrics?.modelUsed || 'gemini-3.8-flash'
     };
 
     const report = db.createReport({
@@ -649,6 +649,12 @@ app.post('/api/demo/detect-niche', async (req: Request, res: Response) => {
 
     // 2. Call Gemini for niche detection with retry and heuristics
     const result = await detectNicheFromInstagram(cleanUser, profileData, manualBio, manualCaptions);
+    if (profileData) {
+      result.followersCount = profileData.followersCount;
+      result.displayName = profileData.name;
+      result.profilePictureUrl = profileData.profilePictureUrl;
+      result.mediaCount = profileData.mediaCount;
+    }
 
     res.json({
       success: true,
@@ -663,7 +669,7 @@ app.post('/api/demo/detect-niche', async (req: Request, res: Response) => {
 // 2. Gerar Calendário de 30 Dias (SOMENTE REELS)
 app.post('/api/demo/generate-30-reels', async (req: Request, res: Response) => {
   try {
-    const { username, confirmedNiche, segment, targetAudience } = req.body;
+    const { username, confirmedNiche, segment, targetAudience, followersCount } = req.body;
     if (!username || typeof username !== 'string' || !username.trim()) {
       return res.status(400).json({ error: 'O @ do Instagram é obrigatório.' });
     }
@@ -671,11 +677,32 @@ app.post('/api/demo/generate-30-reels', async (req: Request, res: Response) => {
     const cleanUser = username.replace(/^@/, '').trim();
     let finalNiche = confirmedNiche && typeof confirmedNiche === 'string' ? confirmedNiche.trim() : '';
 
+    // Check Meta Instagram Business Discovery for profile data
+    let profileData: MetaProfileData | undefined;
+    try {
+      const metaCheck = await fetchInstagramProfileData(cleanUser);
+      if (metaCheck.status === 'connected' && metaCheck.data) {
+        profileData = metaCheck.data;
+      }
+    } catch (metaErr) {
+      console.warn(`[META_DISCOVERY_NOTICE] Não foi possível obter dados Meta para @${cleanUser}:`, metaErr);
+    }
+
+    // If exact followersCount was provided by user, set or override profileData
+    if (followersCount !== undefined && followersCount !== null && !isNaN(Number(followersCount))) {
+      const parsedFollowers = Number(followersCount);
+      if (profileData) {
+        profileData.followersCount = parsedFollowers;
+      } else {
+        profileData = {
+          username: cleanUser,
+          followersCount: parsedFollowers
+        };
+      }
+    }
+
     if (!finalNiche) {
-      // Auto-detect niche from Instagram profile in background
       try {
-        const metaCheck = await fetchInstagramProfileData(cleanUser);
-        const profileData = metaCheck.status === 'connected' ? metaCheck.data : undefined;
         const detected = await detectNicheFromInstagram(cleanUser, profileData);
         finalNiche = detected.detectedNiche || 'Especialista & Criador de Conteúdo';
       } catch {
@@ -687,7 +714,8 @@ app.post('/api/demo/generate-30-reels', async (req: Request, res: Response) => {
       username: cleanUser,
       confirmedNiche: finalNiche,
       segment: segment ? String(segment).trim() : undefined,
-      targetAudience: targetAudience ? String(targetAudience).trim() : undefined
+      targetAudience: targetAudience ? String(targetAudience).trim() : undefined,
+      profileData
     });
 
     res.json({
@@ -1426,7 +1454,7 @@ app.post('/api/admin/client-diagnostics/generate', requireAdmin, async (req: Req
       totalMs: 0,
       fromCache: strategy.executionMetrics?.fromCache || false,
       isFallback: strategy.executionMetrics?.isFallback || false,
-      modelUsed: strategy.executionMetrics?.modelUsed || 'gemini-2.5-flash'
+      modelUsed: strategy.executionMetrics?.modelUsed || 'gemini-3.8-flash'
     };
 
     fullReport.executionMetrics = executionMetrics;

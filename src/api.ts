@@ -370,6 +370,7 @@ export const api = {
     confirmedNiche?: string;
     segment?: string;
     targetAudience?: string;
+    followersCount?: number;
   }): Promise<{ success: boolean; demo: PublicReelsDemoResult }> {
     return request('/api/demo/generate-30-reels', {
       method: 'POST',

@@ -17,6 +17,7 @@ export interface MetaProfileData {
   name?: string;
   biography?: string;
   followersCount?: number;
+  followingCount?: number;
   mediaCount?: number;
   profilePictureUrl?: string;
   website?: string;
@@ -351,6 +352,10 @@ export interface NicheDetectionResult {
   confidence: 'high' | 'medium' | 'low';
   summary: string;
   profileFound: boolean;
+  followersCount?: number;
+  displayName?: string;
+  profilePictureUrl?: string;
+  mediaCount?: number;
 }
 
 export type ReelStrategicObjective =
@@ -374,13 +379,39 @@ export interface PublicReelsCalendarDay {
   hashtags: string[];
 }
 
+export interface ProfileProjection {
+  currentProfile: {
+    username: string;
+    displayName?: string;
+    profilePictureUrl?: string;
+    followersCount?: number;
+    bio?: string;
+    currentPositioning: string;
+    improvementOpportunities: string[];
+  };
+  projectedProfile: {
+    strategicPositioning: string;
+    builtAuthority: string;
+    communicationImprovement: string;
+    growthAndConversionOpportunities: string[];
+    transparencyNote: string;
+  };
+}
+
 export interface PublicReelsDemoResult {
   username: string;
+  displayName?: string;
+  profilePictureUrl?: string;
+  followersCount?: number;
+  followingCount?: number;
+  bio?: string;
+  mediaCount?: number;
   confirmedNiche: string;
   segment?: string;
   targetAudience?: string;
   generatedAt: string;
   totalDays: 30;
+  projection: ProfileProjection;
   calendar: PublicReelsCalendarDay[];
   metrics: {
     durationMs: number;

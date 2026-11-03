@@ -11,7 +11,8 @@ import {
   NicheDetectionResult,
   PublicReelsCalendarDay,
   PublicReelsDemoResult,
-  ReelStrategicObjective
+  ReelStrategicObjective,
+  ProfileProjection
 } from '../src/types';
 
 const ai = new GoogleGenAI({
@@ -957,7 +958,7 @@ Responda ESTRITAMENTE em JSON válido, com a seguinte estrutura:
 
     const geminiCall = async () => {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
           systemInstruction: 'Você é um analisador cirúrgico de nichos para Instagram. Retorne apenas JSON válido.',
@@ -1018,6 +1019,10 @@ Responda ESTRITAMENTE em JSON válido, com a seguinte estrutura:
       detectedNiche = 'Estética Avançada & Beleza';
       segment = 'Procedimentos Faciais e Bem-Estar';
       targetAudience = 'Mulheres e homens focados em rejuvenescimento e cuidados pessoais';
+    } else if (combined.match(/posicion|mkt|marketing|digital|gestao|estrateg/)) {
+      detectedNiche = 'Posicionamento Digital & Marketing Estratégico';
+      segment = 'Consultoria & Estratégia de Conteúdo';
+      targetAudience = 'Profissionais liberais e empreendedores que buscam autoridade e novos clientes no Instagram';
     }
 
     return {
@@ -1051,46 +1056,80 @@ export async function generatePublic30DaysReelsCalendar(params: {
   confirmedNiche: string;
   segment?: string;
   targetAudience?: string;
+  profileData?: MetaProfileData;
 }): Promise<PublicReelsDemoResult> {
   const tStart = Date.now();
   const cleanUser = params.username.replace(/^@/, '').trim();
   const niche = params.confirmedNiche.trim();
   const segment = params.segment || 'Serviços e Atendimento Especializado';
   const audience = params.targetAudience || 'Público comprador qualificado';
+  const pData = params.profileData;
+
+  const displayName = pData?.name || cleanUser;
+  const profilePictureUrl = pData?.profilePictureUrl || undefined;
+  const followersCount = pData?.followersCount;
+  const bio = pData?.biography || undefined;
+  const mediaCount = pData?.mediaCount;
 
   const prompt = `
-Você é o estrategista especialista em Instagram Reels do MAPA DE CONTEÚDO.
-Crie um calendário editorial completo de EXATAMENTE 30 DIAS DE REELS para o perfil @${cleanUser}.
+Você é o estrategista sênior de posicionamento e Reels do MAPA DE CONTEÚDO ESTRATÉGICO.
+Gere uma análise estratégica personalizada e cronograma completo de 30 DIAS DE REELS para o perfil @${cleanUser}.
 
-INFORMAÇÕES CONFIRMADAS PELO CLIENTE:
+DADOS DO PERFIL INFORMADOS / IDENTIFICADOS:
 - Perfil: @${cleanUser}
-- Nicho Confirmado: "${niche}"
+- Nome de exibição: "${displayName}"
+- Nicho de Atuação Confirmado: "${niche}"
 - Segmento: "${segment}"
 - Público-Alvo: "${audience}"
+- Bio Atual: "${bio || 'Não informada ou privada'}"
+- Seguidores: ${followersCount !== undefined ? followersCount : 'Dados não públicos/não informados'}
 
-REGRAS OBRIGATÓRIAS E INEGOCIÁVEIS:
-1. TODOS OS 30 DIAS DEVEM SER EXCLUSIVAMENTE NO FORMATO REELS. Não inclua Stories, nem Carrosséis, nem Posts Estáticos.
-2. Cada dia deve ter uma distribuição variada e equilibrada entre os 7 pilares estratégicos:
-   - "Autoridade"
-   - "Educação"
-   - "Identificação com o público"
-   - "Quebra de objeções"
-   - "Prova de conhecimento"
-   - "Engajamento"
-   - "Conversão e vendas"
-3. Para CADA UM DOS 30 DIAS, forneça rigorosamente:
-   - "day": número de 1 a 30
-   - "theme": Tema específico e não genérico do Reel dentro do nicho
-   - "strategicObjective": um dos 7 pilares citados acima
-   - "hook3s": Gancho inicial magnético para prender nos 3 primeiros segundos (visual e verbal)
-   - "scriptStructure": Roteiro/estrutura detalhada do que falar no vídeo (Abertura, Quebra, Desenvolvimento e Fechamento)
-   - "contentDevelopment": Sugestão de desenvolvimento do conteúdo e encenação na gravação
-   - "cta": Chamada para ação clara e direta (ex: comentar palavra-chave, mandar DM, salvar)
-   - "suggestedCaption": Legenda sugerida completa pronta para postar
-   - "hashtags": array com 5 a 8 hashtags altamente relevantes do nicho
+INSTRUÇÕES RIGOROSAS:
+1. PERSONALIZAÇÃO ABSOLUTA AO NICHO "${niche}":
+   - Use terminologia, situações reais e dores reais específicas deste nicho (ex: se Dentista, foco em saúde bucal, estética do sorriso, tratamentos, autoridade e pacientes particulares; se Advogado(a), segurança jurídica, direitos, prevenção, autoridade e clientes qualificados; se Personal, treino, saúde, constância e alunos; se Empresário, gestão, mercado, autoridade e vendas).
+   - NUNCA misture tópicos de outros nichos nem use temas vazios/genéricos.
+
+2. PROJEÇÃO ESTRATÉGICA DO PERFIL (Comparativo):
+   - currentProfile:
+     - currentPositioning: Análise honesta do posicionamento atual inferido com base no nicho e na bio (ex: comunicação predominantemente operacional, termos técnicos complexos ou falta de autoridade clara e apelo comercial).
+     - improvementOpportunities: Array com 3 a 4 oportunidades práticas e imediatas de melhoria no perfil.
+   - projectedProfile:
+     - strategicPositioning: Novo posicionamento como autoridade de referência no nicho "${niche}".
+     - builtAuthority: Como sua comunicação passará a transmitir autoridade incontestável, segurança e domínio técnico em linguagem acessível.
+     - communicationImprovement: Clareza da mensagem para o cliente ideal entender em segundos quem você é e por que escolher você.
+     - growthAndConversionOpportunities: Array com 3 a 4 oportunidades estratégicas reais de atração qualificada e conversão em vendas/atendimentos.
+     - transparencyNote: Nota transparente enfatizando que o crescimento decorre da consistência, execução contínua e qualidade estratégica da mensagem, sem promessas fáceis ou números garantidos.
+
+3. CALENDÁRIO DE 30 DIAS DE REELS (SOMENTE REELS):
+   - EXATAMENTE 30 DIAS, numerados de 1 a 30 no campo "day".
+   - 100% no formato REELS (vídeos verticais).
+   - Equilibre entre os 7 pilares estratégicos: "Autoridade", "Educação", "Identificação com o público", "Quebra de objeções", "Prova de conhecimento", "Engajamento", "Conversão e vendas".
+   - Cada dia deve conter:
+     - day: 1 a 30
+     - theme: Tema hiper-específico para ${niche}
+     - strategicObjective: um dos 7 pilares citados acima
+     - hook3s: Gancho inicial magnético de 3 segundos (visual e verbal para prender na rolagem)
+     - scriptStructure: Roteiro estruturado (Abertura, Problema/Quebra, Solução, Fechamento)
+     - contentDevelopment: Direcionamento visual de encenação, ângulo da câmera e demonstração prática
+     - cta: Chamada para ação clara e direta
+     - suggestedCaption: Legenda sugerida completa e persuasiva
+     - hashtags: array com 5 a 8 hashtags altamente específicas do nicho
 
 Retorne ESTRITAMENTE um JSON com esta estrutura:
 {
+  "projection": {
+    "currentProfile": {
+      "currentPositioning": "...",
+      "improvementOpportunities": ["...", "...", "..."]
+    },
+    "projectedProfile": {
+      "strategicPositioning": "...",
+      "builtAuthority": "...",
+      "communicationImprovement": "...",
+      "growthAndConversionOpportunities": ["...", "...", "..."],
+      "transparencyNote": "A evolução do perfil depende da disciplina e da aplicação consistente do método de conteúdo estratégico. Não prometemos métricas mágicas ou resultados automáticos sem execução."
+    }
+  },
   "calendar": [
     {
       "day": 1,
@@ -1103,7 +1142,6 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
       "suggestedCaption": "...",
       "hashtags": ["#...", "#..."]
     }
-    // ... exatamente 30 itens, do dia 1 ao 30
   ]
 }
 `;
@@ -1115,11 +1153,11 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
 
     const geminiCall = async () => {
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.8-flash',
         contents: prompt,
         config: {
           systemInstruction:
-            'Você é um roteirista de alta conversão de Instagram Reels. Gere 30 dias de Reels em JSON válido, com temas hiper-específicos para o nicho informado.',
+            'Você é um estrategista de conteúdo e roteirista sênior de Reels para Instagram. Retorne rigorosamente JSON válido com a projeção comparativa e os 30 dias de Reels hiper-específicos para o nicho informado.',
           responseMimeType: 'application/json'
         }
       });
@@ -1129,6 +1167,31 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
     };
 
     const parsed = await callGeminiWithRetry(geminiCall, 2);
+
+    // Build or normalize projection
+    const fallbackProj = generateFallbackProjection(cleanUser, niche, audience, pData);
+    const finalProjection: ProfileProjection = {
+      currentProfile: {
+        username: cleanUser,
+        displayName: displayName || fallbackProj.currentProfile.displayName,
+        profilePictureUrl: profilePictureUrl || fallbackProj.currentProfile.profilePictureUrl,
+        followersCount: followersCount !== undefined ? followersCount : fallbackProj.currentProfile.followersCount,
+        bio: bio || fallbackProj.currentProfile.bio,
+        currentPositioning: parsed.projection?.currentProfile?.currentPositioning || fallbackProj.currentProfile.currentPositioning,
+        improvementOpportunities: Array.isArray(parsed.projection?.currentProfile?.improvementOpportunities) && parsed.projection.currentProfile.improvementOpportunities.length > 0
+          ? parsed.projection.currentProfile.improvementOpportunities
+          : fallbackProj.currentProfile.improvementOpportunities
+      },
+      projectedProfile: {
+        strategicPositioning: parsed.projection?.projectedProfile?.strategicPositioning || fallbackProj.projectedProfile.strategicPositioning,
+        builtAuthority: parsed.projection?.projectedProfile?.builtAuthority || fallbackProj.projectedProfile.builtAuthority,
+        communicationImprovement: parsed.projection?.projectedProfile?.communicationImprovement || fallbackProj.projectedProfile.communicationImprovement,
+        growthAndConversionOpportunities: Array.isArray(parsed.projection?.projectedProfile?.growthAndConversionOpportunities) && parsed.projection.projectedProfile.growthAndConversionOpportunities.length > 0
+          ? parsed.projection.projectedProfile.growthAndConversionOpportunities
+          : fallbackProj.projectedProfile.growthAndConversionOpportunities,
+        transparencyNote: parsed.projection?.projectedProfile?.transparencyNote || fallbackProj.projectedProfile.transparencyNote
+      }
+    };
 
     let days: PublicReelsCalendarDay[] = parsed.calendar || [];
 
@@ -1155,16 +1218,23 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
 
     return {
       username: cleanUser,
+      displayName,
+      profilePictureUrl,
+      followersCount,
+      followingCount: pData?.followingCount,
+      bio,
+      mediaCount,
       confirmedNiche: niche,
       segment,
       targetAudience: audience,
       generatedAt: new Date().toISOString(),
       totalDays: 30,
+      projection: finalProjection,
       calendar: days,
       metrics: {
         durationMs: Date.now() - tStart,
         fromCache: false,
-        modelUsed: 'gemini-2.5-flash',
+        modelUsed: 'gemini-3.8-flash',
         isFallback: false
       }
     };
@@ -1172,14 +1242,22 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
     console.warn(`[REELS_FALLBACK] Ativando gerador estrutural de 30 Reels para ${niche} devido a:`, err instanceof Error ? err.message : err);
 
     const fallbackDays = generateFallback30Reels(cleanUser, niche, audience);
+    const fallbackProjection = generateFallbackProjection(cleanUser, niche, audience, pData);
 
     return {
       username: cleanUser,
+      displayName,
+      profilePictureUrl,
+      followersCount,
+      followingCount: pData?.followingCount,
+      bio,
+      mediaCount,
       confirmedNiche: niche,
       segment,
       targetAudience: audience,
       generatedAt: new Date().toISOString(),
       totalDays: 30,
+      projection: fallbackProjection,
       calendar: fallbackDays,
       metrics: {
         durationMs: Date.now() - tStart,
@@ -1189,6 +1267,51 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
       }
     };
   }
+}
+
+/**
+ * Gera a projeção estrutural do perfil com comparativo Perfil Atual vs Perfil Projetado
+ */
+export function generateFallbackProjection(
+  username: string,
+  niche: string,
+  audience: string,
+  profileData?: MetaProfileData
+): ProfileProjection {
+  const clean = username.replace(/^@/, '').trim();
+  const displayName = profileData?.name || clean;
+  const followersCount = profileData?.followersCount;
+  const bio = profileData?.biography;
+  const profilePictureUrl = profileData?.profilePictureUrl;
+
+  return {
+    currentProfile: {
+      username: clean,
+      displayName,
+      profilePictureUrl,
+      followersCount,
+      bio,
+      currentPositioning: `Atuação profissional no nicho de ${niche}, com comunicação predominantemente operacional e com potencial para fortalecer o reconhecimento e a diferenciação perante o mercado.`,
+      improvementOpportunities: [
+        `Estruturar ganchos magnéticos nos primeiros 3 segundos de cada Reel para prender a atenção do público de ${niche}.`,
+        `Alinhar a biografia com uma promessa clara de transformação e chamada direcionada para atendimento ou direct.`,
+        `Diversificar os conteúdos com foco intencional nos 7 pilares estratégicos de autoridade e conversão.`,
+        `Substituir postagens aleatórias por um cronograma editorial orientado para a atração de clientes com real intenção de compra.`
+      ]
+    },
+    projectedProfile: {
+      strategicPositioning: `Referência reconhecida em ${niche}, com autoridade estabelecida, comunicação magnética e geração contínua de oportunidades de atendimento e vendas.`,
+      builtAuthority: `Demonstração visual de domínio técnico e metodologia clara, transmitindo segurança imediata para o público ideal em cada vídeo.`,
+      communicationImprovement: `Comunicação direta, empática e acessível, transformando conceitos complexos de ${niche} em soluções práticas que quebram objeções antes mesmo do primeiro contato.`,
+      growthAndConversionOpportunities: [
+        `Atração diária de novos seguidores qualificados interessados em soluções específicas do seu nicho.`,
+        `Aumento consistente nas mensagens recebidas no direct com perguntas de contratação e interesse comercial.`,
+        `Construção de uma audiência proprietária e fiel, blindada contra concorrência por preço baixo.`,
+        `Posicionamento premium que permite valorizar honorários, produtos ou consultas com previsibilidade.`
+      ],
+      transparencyNote: `A evolução do perfil depende da disciplina, frequência e aplicação consistente deste cronograma estratégico. Resultados sólidos são construídos com excelência de conteúdo e relacionamento, sem fórmulas mágicas ou garantias artificiais de métricas.`
+    }
+  };
 }
 
 /**
