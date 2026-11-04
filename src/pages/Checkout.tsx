@@ -10,7 +10,7 @@ import {
   FileCheck,
   AlertCircle
 } from 'lucide-react';
-import { api } from '../api';
+import { api, FALLBACK_PLANS } from '../api';
 import { PricingPlan, Report } from '../types';
 
 interface CheckoutProps {
@@ -24,7 +24,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
   initialPlanId = 'pro',
   onNavigate
 }) => {
-  const [plans, setPlans] = useState<PricingPlan[]>([]);
+  const [plans, setPlans] = useState<PricingPlan[]>(FALLBACK_PLANS);
   const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId);
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,7 +38,9 @@ export const Checkout: React.FC<CheckoutProps> = ({
   useEffect(() => {
     Promise.all([api.getPlans(), api.getReport(reportId)])
       .then(([plansRes, reportRes]) => {
-        setPlans(plansRes.plans);
+        if (plansRes && Array.isArray(plansRes.plans) && plansRes.plans.length > 0) {
+          setPlans(plansRes.plans);
+        }
         setReport(reportRes.report);
         if (reportRes.report.isPaid) {
           onNavigate('report', reportId);
@@ -48,7 +50,7 @@ export const Checkout: React.FC<CheckoutProps> = ({
       .finally(() => setLoading(false));
   }, [reportId]);
 
-  const selectedPlan = plans.find((p) => p.id === selectedPlanId) || plans[1] || plans[0];
+  const selectedPlan = plans.find((p) => p.id === selectedPlanId) || FALLBACK_PLANS.find((p) => p.id === selectedPlanId) || plans[0] || FALLBACK_PLANS[0];
 
   const handleVerify = async () => {
     setVerifying(true);

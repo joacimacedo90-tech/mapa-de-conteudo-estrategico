@@ -61,6 +61,45 @@ app.get('/api/profile/meta-check', async (req: Request, res: Response) => {
   res.json(result);
 });
 
+// Proxy Instagram Profile Pictures to bypass cross-origin referrer restrictions
+app.get('/api/instagram/proxy-image', async (req: Request, res: Response) => {
+  const imageUrl = String(req.query.url || '').trim();
+  if (!imageUrl) {
+    return res.status(400).send('Image URL is required');
+  }
+
+  try {
+    const parsed = new URL(imageUrl);
+    const allowedHosts = ['cdninstagram.com', 'fbcdn.net', 'instagram.com'];
+    const isAllowed = allowedHosts.some((h) => parsed.hostname.endsWith(h));
+    if (!isAllowed) {
+      return res.status(403).send('Host not allowed');
+    }
+
+    const response = await fetch(imageUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko)',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Referer': 'https://www.instagram.com/'
+      },
+      signal: AbortSignal.timeout(5000)
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).send('Failed to fetch image from CDN');
+    }
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
+
+    const arrayBuffer = await response.arrayBuffer();
+    return res.send(Buffer.from(arrayBuffer));
+  } catch {
+    return res.status(502).send('Proxy error');
+  }
+});
+
 // Generate Analysis & Strategy (Gemini exclusively on backend)
 app.post('/api/reports/generate', async (req: Request, res: Response) => {
   const tTotalStart = Date.now();
@@ -643,16 +682,27 @@ app.post('/api/demo/detect-niche', async (req: Request, res: Response) => {
 
     const cleanUser = username.replace(/^@/, '').trim();
 
-    // 1. Check Meta Instagram Business Discovery
+    // 1. Check Instagram Profile Live Data (Strict Real Data, never invented)
     const metaCheck = await fetchInstagramProfileData(cleanUser);
-    const profileData = metaCheck.status === 'connected' ? metaCheck.data : undefined;
+    const profileData = metaCheck.data;
 
     // 2. Call Gemini for niche detection with retry and heuristics
     const result = await detectNicheFromInstagram(cleanUser, profileData, manualBio, manualCaptions);
+    
+    // 3. Attach strict provenance and identity verification metadata
+    result.verifiedLive = Boolean(metaCheck.verifiedLive);
+    result.queriedAt = metaCheck.queriedAt || new Date().toISOString();
+    result.source = metaCheck.source || (metaCheck.verifiedLive ? 'Instagram Live' : 'Consulta não confirmada');
+    result.identityValidated = Boolean(metaCheck.verifiedLive && profileData?.name);
+    result.unverifiedReason = metaCheck.errorReason;
+
     if (profileData) {
       result.followersCount = profileData.followersCount;
       result.displayName = profileData.name;
-      result.profilePictureUrl = profileData.profilePictureUrl;
+      // Wrap photo through proxy if available
+      result.profilePictureUrl = profileData.profilePictureUrl
+        ? `/api/instagram/proxy-image?url=${encodeURIComponent(profileData.profilePictureUrl)}`
+        : undefined;
       result.mediaCount = profileData.mediaCount;
     }
 
@@ -669,7 +719,7 @@ app.post('/api/demo/detect-niche', async (req: Request, res: Response) => {
 // 2. Gerar Calendário de 30 Dias (SOMENTE REELS)
 app.post('/api/demo/generate-30-reels', async (req: Request, res: Response) => {
   try {
-    const { username, confirmedNiche, segment, targetAudience, followersCount } = req.body;
+    const { username, confirmedNiche, segment, targetAudience, followersCount, email, whatsapp } = req.body;
     if (!username || typeof username !== 'string' || !username.trim()) {
       return res.status(400).json({ error: 'O @ do Instagram é obrigatório.' });
     }
@@ -677,28 +727,32 @@ app.post('/api/demo/generate-30-reels', async (req: Request, res: Response) => {
     const cleanUser = username.replace(/^@/, '').trim();
     let finalNiche = confirmedNiche && typeof confirmedNiche === 'string' ? confirmedNiche.trim() : '';
 
-    // Check Meta Instagram Business Discovery for profile data
-    let profileData: MetaProfileData | undefined;
-    try {
-      const metaCheck = await fetchInstagramProfileData(cleanUser);
-      if (metaCheck.status === 'connected' && metaCheck.data) {
-        profileData = metaCheck.data;
-      }
-    } catch (metaErr) {
-      console.warn(`[META_DISCOVERY_NOTICE] Não foi possível obter dados Meta para @${cleanUser}:`, metaErr);
+    if (email || whatsapp) {
+      console.log(`[DEMO_LEAD] @${cleanUser} | Email: ${email || '-'} | WhatsApp: ${whatsapp || '-'}`);
     }
 
-    // If exact followersCount was provided by user, set or override profileData
+    // Check Instagram Profile Live Data
+    const metaCheck = await fetchInstagramProfileData(cleanUser);
+    let profileData: MetaProfileData = metaCheck.data || {
+      username: cleanUser,
+      verifiedLive: false,
+      queriedAt: metaCheck.queriedAt || new Date().toISOString(),
+      source: 'Consulta não confirmada',
+      errorReason: metaCheck.errorReason
+    };
+
+    // If exact followersCount was provided manually by user, preserve all digits
     if (followersCount !== undefined && followersCount !== null && !isNaN(Number(followersCount))) {
-      const parsedFollowers = Number(followersCount);
-      if (profileData) {
-        profileData.followersCount = parsedFollowers;
-      } else {
-        profileData = {
-          username: cleanUser,
-          followersCount: parsedFollowers
-        };
+      const parsedFollowers = Math.floor(Number(followersCount));
+      profileData.followersCount = parsedFollowers;
+      if (!metaCheck.verifiedLive) {
+        profileData.source = 'Confirmado manualmente pelo usuário';
       }
+    }
+
+    // Proxy image URL if real picture is available
+    if (profileData.profilePictureUrl && !profileData.profilePictureUrl.startsWith('/api/instagram/proxy-image')) {
+      profileData.profilePictureUrl = `/api/instagram/proxy-image?url=${encodeURIComponent(profileData.profilePictureUrl)}`;
     }
 
     if (!finalNiche) {

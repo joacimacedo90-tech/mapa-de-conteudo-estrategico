@@ -22,12 +22,20 @@ export interface MetaProfileData {
   profilePictureUrl?: string;
   website?: string;
   recentCaptions?: string[];
+  verifiedLive?: boolean;
+  queriedAt?: string;
+  source?: string;
+  errorReason?: string;
 }
 
 export interface MetaDiscoveryResult {
   status: 'connected' | 'not_configured' | 'error_account_private_or_invalid';
   message: string;
   data?: MetaProfileData;
+  queriedAt?: string;
+  source?: string;
+  verifiedLive?: boolean;
+  errorReason?: string;
 }
 
 export interface ContentIdea {
@@ -356,6 +364,11 @@ export interface NicheDetectionResult {
   displayName?: string;
   profilePictureUrl?: string;
   mediaCount?: number;
+  verifiedLive?: boolean;
+  queriedAt?: string;
+  source?: string;
+  identityValidated?: boolean;
+  unverifiedReason?: string;
 }
 
 export type ReelStrategicObjective =
@@ -388,6 +401,10 @@ export interface ProfileProjection {
     bio?: string;
     currentPositioning: string;
     improvementOpportunities: string[];
+    verifiedLive?: boolean;
+    queriedAt?: string;
+    source?: string;
+    identityValidated?: boolean;
   };
   projectedProfile: {
     strategicPositioning: string;
@@ -395,6 +412,11 @@ export interface ProfileProjection {
     communicationImprovement: string;
     growthAndConversionOpportunities: string[];
     transparencyNote: string;
+    differentiation?: string;
+    targetAudienceProfile?: string;
+    painAndObjectionStrategy?: string;
+    conversionPath?: string;
+    nicheCommunicationGuide?: string;
   };
 }
 
@@ -413,6 +435,11 @@ export interface PublicReelsDemoResult {
   totalDays: 30;
   projection: ProfileProjection;
   calendar: PublicReelsCalendarDay[];
+  verifiedLive?: boolean;
+  queriedAt?: string;
+  source?: string;
+  identityValidated?: boolean;
+  unverifiedReason?: string;
   metrics: {
     durationMs: number;
     fromCache: boolean;

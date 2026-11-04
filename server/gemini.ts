@@ -1064,8 +1064,7 @@ export async function generatePublic30DaysReelsCalendar(params: {
   const segment = params.segment || 'Serviços e Atendimento Especializado';
   const audience = params.targetAudience || 'Público comprador qualificado';
   const pData = params.profileData;
-
-  const displayName = pData?.name || cleanUser;
+  const displayName = pData?.name || undefined;
   const profilePictureUrl = pData?.profilePictureUrl || undefined;
   const followersCount = pData?.followersCount;
   const bio = pData?.biography || undefined;
@@ -1077,7 +1076,7 @@ Gere uma análise estratégica personalizada e cronograma completo de 30 DIAS DE
 
 DADOS DO PERFIL INFORMADOS / IDENTIFICADOS:
 - Perfil: @${cleanUser}
-- Nome de exibição: "${displayName}"
+- Nome de exibição: "${displayName || 'Não informado / privado'}"
 - Nicho de Atuação Confirmado: "${niche}"
 - Segmento: "${segment}"
 - Público-Alvo: "${audience}"
@@ -1170,6 +1169,11 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
 
     // Build or normalize projection
     const fallbackProj = generateFallbackProjection(cleanUser, niche, audience, pData);
+    const verifiedLive = pData?.verifiedLive || false;
+    const queriedAt = pData?.queriedAt || new Date().toISOString();
+    const source = pData?.source || (verifiedLive ? 'Instagram Live' : 'Dado informado pelo usuário');
+    const identityValidated = Boolean(verifiedLive && displayName);
+
     const finalProjection: ProfileProjection = {
       currentProfile: {
         username: cleanUser,
@@ -1180,7 +1184,11 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
         currentPositioning: parsed.projection?.currentProfile?.currentPositioning || fallbackProj.currentProfile.currentPositioning,
         improvementOpportunities: Array.isArray(parsed.projection?.currentProfile?.improvementOpportunities) && parsed.projection.currentProfile.improvementOpportunities.length > 0
           ? parsed.projection.currentProfile.improvementOpportunities
-          : fallbackProj.currentProfile.improvementOpportunities
+          : fallbackProj.currentProfile.improvementOpportunities,
+        verifiedLive,
+        queriedAt,
+        source,
+        identityValidated
       },
       projectedProfile: {
         strategicPositioning: parsed.projection?.projectedProfile?.strategicPositioning || fallbackProj.projectedProfile.strategicPositioning,
@@ -1189,6 +1197,11 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
         growthAndConversionOpportunities: Array.isArray(parsed.projection?.projectedProfile?.growthAndConversionOpportunities) && parsed.projection.projectedProfile.growthAndConversionOpportunities.length > 0
           ? parsed.projection.projectedProfile.growthAndConversionOpportunities
           : fallbackProj.projectedProfile.growthAndConversionOpportunities,
+        differentiation: parsed.projection?.projectedProfile?.differentiation || fallbackProj.projectedProfile.differentiation,
+        targetAudienceProfile: parsed.projection?.projectedProfile?.targetAudienceProfile || fallbackProj.projectedProfile.targetAudienceProfile,
+        painAndObjectionStrategy: parsed.projection?.projectedProfile?.painAndObjectionStrategy || fallbackProj.projectedProfile.painAndObjectionStrategy,
+        conversionPath: parsed.projection?.projectedProfile?.conversionPath || fallbackProj.projectedProfile.conversionPath,
+        nicheCommunicationGuide: parsed.projection?.projectedProfile?.nicheCommunicationGuide || fallbackProj.projectedProfile.nicheCommunicationGuide,
         transparencyNote: parsed.projection?.projectedProfile?.transparencyNote || fallbackProj.projectedProfile.transparencyNote
       }
     };
@@ -1231,6 +1244,11 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
       totalDays: 30,
       projection: finalProjection,
       calendar: days,
+      verifiedLive,
+      queriedAt,
+      source,
+      identityValidated,
+      unverifiedReason: pData?.errorReason,
       metrics: {
         durationMs: Date.now() - tStart,
         fromCache: false,
@@ -1259,6 +1277,11 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
       totalDays: 30,
       projection: fallbackProjection,
       calendar: fallbackDays,
+      verifiedLive: pData?.verifiedLive || false,
+      queriedAt: pData?.queriedAt || new Date().toISOString(),
+      source: pData?.source || (pData?.verifiedLive ? 'Instagram Live' : 'Dado informado pelo usuário'),
+      identityValidated: Boolean(pData?.verifiedLive && displayName),
+      unverifiedReason: pData?.errorReason,
       metrics: {
         durationMs: Date.now() - tStart,
         fromCache: false,
@@ -1279,10 +1302,13 @@ export function generateFallbackProjection(
   profileData?: MetaProfileData
 ): ProfileProjection {
   const clean = username.replace(/^@/, '').trim();
-  const displayName = profileData?.name || clean;
+  const displayName = profileData?.name || undefined;
   const followersCount = profileData?.followersCount;
   const bio = profileData?.biography;
   const profilePictureUrl = profileData?.profilePictureUrl;
+  const verifiedLive = profileData?.verifiedLive || false;
+  const queriedAt = profileData?.queriedAt || new Date().toISOString();
+  const source = profileData?.source || (verifiedLive ? 'Instagram Live' : 'Dado informado pelo usuário');
 
   return {
     currentProfile: {
@@ -1291,6 +1317,10 @@ export function generateFallbackProjection(
       profilePictureUrl,
       followersCount,
       bio,
+      verifiedLive,
+      queriedAt,
+      source,
+      identityValidated: Boolean(verifiedLive && displayName),
       currentPositioning: `Atuação profissional no nicho de ${niche}, com comunicação predominantemente operacional e com potencial para fortalecer o reconhecimento e a diferenciação perante o mercado.`,
       improvementOpportunities: [
         `Estruturar ganchos magnéticos nos primeiros 3 segundos de cada Reel para prender a atenção do público de ${niche}.`,
@@ -1309,6 +1339,11 @@ export function generateFallbackProjection(
         `Construção de uma audiência proprietária e fiel, blindada contra concorrência por preço baixo.`,
         `Posicionamento premium que permite valorizar honorários, produtos ou consultas com previsibilidade.`
       ],
+      differentiation: `Posicionamento exclusivo focado em método próprio, humanização e resultados comprovados para ${niche}, saindo da guerra de preços com concorrentes genéricos.`,
+      targetAudienceProfile: `Pessoas e tomadores de decisão que valorizam atendimento de alto nível e segurança em ${niche}, dispostos a investir em soluções definitivas.`,
+      painAndObjectionStrategy: `Vídeos cirúrgicos que antecipam e desarmam dúvidas frequentes (tempo, custo e complexidade) antes mesmo da oferta direta.`,
+      conversionPath: `Funil simplificado de 3 etapas: Reel de atração magnética → Prova de domínio e autoridade → Chamada de 1 clique para conversa orientada no Direct ou WhatsApp.`,
+      nicheCommunicationGuide: `Comunique-se com clareza, empatia e assertividade. Aborde os desafios cotidianos do seu cliente em ${niche} sem jargões desnecessários, destacando a transformação real e a tranquilidade que o seu serviço entrega.`,
       transparencyNote: `A evolução do perfil depende da disciplina, frequência e aplicação consistente deste cronograma estratégico. Resultados sólidos são construídos com excelência de conteúdo e relacionamento, sem fórmulas mágicas ou garantias artificiais de métricas.`
     }
   };

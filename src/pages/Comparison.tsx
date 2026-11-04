@@ -18,7 +18,7 @@ import {
   TrendingUp,
   Award
 } from 'lucide-react';
-import { api } from '../api';
+import { api, FALLBACK_PLANS } from '../api';
 import { PricingPlan } from '../types';
 
 interface ComparisonProps {
@@ -27,7 +27,7 @@ interface ComparisonProps {
 }
 
 export const Comparison: React.FC<ComparisonProps> = ({ reportId, onNavigate }) => {
-  const [plans, setPlans] = useState<PricingPlan[]>([]);
+  const [plans, setPlans] = useState<PricingPlan[]>(FALLBACK_PLANS);
   const [loading, setLoading] = useState(true);
   const [reportUsername, setReportUsername] = useState<string | null>(null);
 
@@ -37,7 +37,9 @@ export const Comparison: React.FC<ComparisonProps> = ({ reportId, onNavigate }) 
       reportId ? api.getReport(reportId).catch(() => null) : Promise.resolve(null)
     ])
       .then(([plansRes, reportRes]) => {
-        setPlans(plansRes.plans);
+        if (plansRes && Array.isArray(plansRes.plans) && plansRes.plans.length > 0) {
+          setPlans(plansRes.plans);
+        }
         if (reportRes?.report) {
           setReportUsername(reportRes.report.username);
         }
@@ -54,7 +56,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ reportId, onNavigate }) 
     return `${base}${separator}${sckParam}`;
   };
 
-  const getPlanById = (id: string) => plans.find((p) => p.id === id) || plans[0];
+  const getPlanById = (id: string) => plans.find((p) => p.id === id) || FALLBACK_PLANS.find((p) => p.id === id) || FALLBACK_PLANS[0];
 
   const planEssencial = getPlanById('essencial');
   const planPro = getPlanById('pro');

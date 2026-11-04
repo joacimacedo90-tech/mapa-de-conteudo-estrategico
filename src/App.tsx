@@ -68,8 +68,10 @@ export default function App() {
       } else {
         setCurrentPage('report');
       }
-    } else if (pageParam) {
+    } else if (pageParam && pageParam !== 'solicitar-acesso' && ['comparison', 'login', 'my-reports', 'admin'].includes(pageParam)) {
       setCurrentPage(pageParam);
+    } else {
+      setCurrentPage('home');
     }
   }, []);
 
@@ -157,9 +159,11 @@ export default function App() {
           )}
 
           {currentPage === 'solicitar-acesso' && (
-            <FreeAccessRequestPage
+            <Home
+              onReportGenerated={handleReportGenerated}
               onNavigate={navigateTo}
               onOpenLgpd={() => setLgpdModalOpen(true)}
+              userId={currentUser?.id}
             />
           )}
 

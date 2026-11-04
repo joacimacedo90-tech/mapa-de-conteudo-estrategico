@@ -3,29 +3,157 @@ import { User, Report, PricingPlan, AdminSettings, WebhookLog, MetaDiscoveryResu
 const TOKEN_KEY = 'mapa_auth_token';
 const ADMIN_TOKEN_KEY = 'mapa_admin_token';
 
+// In-memory fallback for environments with blocked localStorage (e.g. mobile incognito)
+const memoryStorage: Record<string, string> = {};
+
+function safeGetItem(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return memoryStorage[key] || null;
+  }
+}
+
+function safeSetItem(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    memoryStorage[key] = value;
+  }
+}
+
+function safeRemoveItem(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    delete memoryStorage[key];
+  }
+}
+
 export function getAuthToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  return safeGetItem(TOKEN_KEY);
 }
 
 export function setAuthToken(token: string | null) {
   if (token) {
-    localStorage.setItem(TOKEN_KEY, token);
+    safeSetItem(TOKEN_KEY, token);
   } else {
-    localStorage.removeItem(TOKEN_KEY);
+    safeRemoveItem(TOKEN_KEY);
   }
 }
 
 export function getAdminToken(): string | null {
-  return localStorage.getItem(ADMIN_TOKEN_KEY);
+  return safeGetItem(ADMIN_TOKEN_KEY);
 }
 
 export function setAdminToken(token: string | null) {
   if (token) {
-    localStorage.setItem(ADMIN_TOKEN_KEY, token);
+    safeSetItem(ADMIN_TOKEN_KEY, token);
   } else {
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    safeRemoveItem(ADMIN_TOKEN_KEY);
   }
 }
+
+export const FALLBACK_PLANS: PricingPlan[] = [
+  {
+    id: 'essencial',
+    name: 'Plano Essencial',
+    price: 47,
+    originalPrice: 97,
+    installments: '5x de R$ 10,23',
+    description: 'Ideal para quem busca clareza de posicionamento e direção para os primeiros 30 dias.',
+    features: [
+      'Diagnóstico Completo de Posicionamento & Bio',
+      'Projeção de Crescimento de Seguidores em 90 Dias (3 Cenários)',
+      'Análise de Público-Alvo, Dores Profundas & Desejos',
+      '30 Ideias de Conteúdo Estratégico',
+      'Calendário Estratégico Editorial de 30 Dias (Mês 1)',
+      'Identificação do Diferencial Competitivo Único'
+    ],
+    hotmartCheckoutUrl: 'https://pay.hotmart.com/D108257746C?off=a42sa4ug',
+    hotmartProductId: 'D108257746C',
+    hotmartOfferCode: 'a42sa4ug',
+    limits: {
+      calendarDays: 30,
+      hasDiagnosis: true,
+      hasGrowthProjection: true,
+      hasContentIdeas: true,
+      hasReels: false,
+      hasCarousels: false,
+      hasStories: false,
+      hasHooks: false,
+      hasExportMarkdown: false,
+      hasVipBadge: false
+    },
+    isPopular: false
+  },
+  {
+    id: 'pro',
+    name: 'Plano Estratégico Pro',
+    badge: 'Mais Vendido',
+    price: 97,
+    originalPrice: 197,
+    installments: '10x de R$ 11,28',
+    description: 'Acelerador com roteiros prontos e 60 dias de calendário para crescer e atrair clientes.',
+    features: [
+      'Tudo do Plano Essencial',
+      '10 Roteiros Prontos de Reels (Ganchos + Quebra + CTA)',
+      '10 Carrosséis Estruturados Slide a Slide',
+      '10 Sequências de Stories de Alta Conversão',
+      'Banco de Ganchos Magnéticos & Modelos de Legenda',
+      'Calendário Estratégico Editorial de 60 Dias (Mês 1 e Mês 2)',
+      'Exportação de Conteúdo em Texto e Markdown'
+    ],
+    hotmartCheckoutUrl: 'https://pay.hotmart.com/D108257746C?off=vp8mrq3g',
+    hotmartProductId: 'D108257746C',
+    hotmartOfferCode: 'vp8mrq3g',
+    limits: {
+      calendarDays: 60,
+      hasDiagnosis: true,
+      hasGrowthProjection: true,
+      hasContentIdeas: true,
+      hasReels: true,
+      hasCarousels: true,
+      hasStories: true,
+      hasHooks: true,
+      hasExportMarkdown: true,
+      hasVipBadge: false
+    },
+    isPopular: true
+  },
+  {
+    id: 'premium',
+    name: 'Plano Premium VIP',
+    badge: 'Acesso Completo',
+    price: 197,
+    originalPrice: 397,
+    installments: '12x de R$ 19,78',
+    description: 'Acesso total e irrestrito: cronograma trimestral completo de 90 dias e suporte prioritário.',
+    features: [
+      'Tudo do Plano Estratégico Pro',
+      'Calendário Trimestral Completo de 90 Dias (Mês 1, Mês 2 e Mês 3)',
+      'Acesso Prioritário a Atualizações e Novos Recursos',
+      'Selo VIP no Painel do Cliente',
+      'Roteiros Avançados de Conversão Direta'
+    ],
+    hotmartCheckoutUrl: 'https://pay.hotmart.com/D108257746C?off=h8rve3k7',
+    hotmartProductId: 'D108257746C',
+    hotmartOfferCode: 'h8rve3k7',
+    limits: {
+      calendarDays: 90,
+      hasDiagnosis: true,
+      hasGrowthProjection: true,
+      hasContentIdeas: true,
+      hasReels: true,
+      hasCarousels: true,
+      hasStories: true,
+      hasHooks: true,
+      hasExportMarkdown: true,
+      hasVipBadge: true
+    },
+    isPopular: false
+  }
+];
 
 // Resilient request helper with 35s client timeout to prevent infinite UI loading
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -63,6 +191,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
     if (timer) clearTimeout(timer);
 
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('text/html') && endpoint.startsWith('/api/')) {
+      throw new Error(`Servidor retornou HTML ao invés de dados para ${endpoint}. O endpoint pode não estar roteado.`);
+    }
+
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
@@ -85,7 +218,28 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 export const api = {
   // Public & Plans
   async getPlans(): Promise<{ plans: PricingPlan[]; headlineBanner: string; metaConfigured: boolean }> {
-    return request('/api/plans');
+    try {
+      const res = await request<{ plans?: PricingPlan[]; headlineBanner?: string; metaConfigured?: boolean }>('/api/plans');
+      if (res && Array.isArray(res.plans) && res.plans.length > 0) {
+        return {
+          plans: res.plans,
+          headlineBanner: res.headlineBanner || '',
+          metaConfigured: Boolean(res.metaConfigured)
+        };
+      }
+      return {
+        plans: FALLBACK_PLANS,
+        headlineBanner: 'Oferta Especial: Desbloqueie seu plano estratégico de 90 dias com liberação imediata!',
+        metaConfigured: false
+      };
+    } catch (e) {
+      console.warn('[API_PLANS_FALLBACK] Utilizando planos padrões do sistema:', e);
+      return {
+        plans: FALLBACK_PLANS,
+        headlineBanner: 'Oferta Especial: Desbloqueie seu plano estratégico de 90 dias com liberação imediata!',
+        metaConfigured: false
+      };
+    }
   },
 
   async checkMetaProfile(username: string): Promise<MetaDiscoveryResult> {
@@ -371,6 +525,8 @@ export const api = {
     segment?: string;
     targetAudience?: string;
     followersCount?: number;
+    email?: string;
+    whatsapp?: string;
   }): Promise<{ success: boolean; demo: PublicReelsDemoResult }> {
     return request('/api/demo/generate-30-reels', {
       method: 'POST',
