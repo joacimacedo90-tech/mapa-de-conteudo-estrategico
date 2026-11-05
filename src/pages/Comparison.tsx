@@ -91,11 +91,11 @@ export const Comparison: React.FC<ComparisonProps> = ({ reportId, onNavigate }) 
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#ee4957]/10 dark:bg-[#ee4957]/20 border border-[#ee4957]/30 text-[#ee4957] text-xs font-bold uppercase tracking-wider">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Comparativo Oficial de Planos Hotmart</span>
+          <span>Protocolo de Planejamento Estratégico • Planos Oficiais</span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-zinc-900 dark:text-white font-heading tracking-tight leading-tight">
-          Escolha o Plano Ideal para o seu Instagram
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-zinc-900 dark:text-white font-heading tracking-tight leading-tight uppercase">
+          PROTOCOLO DE PLANEJAMENTO <span className="bg-gradient-to-r from-[#ee4957] to-amber-500 bg-clip-text text-transparent">ESTRATÉGICO</span>
         </h1>
 
         <p className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400 max-w-2xl mx-auto">

@@ -53,14 +53,6 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLgpd, onNavigate }) => {
                   Meus Relatórios
                 </button>
               </li>
-              <li>
-                <button
-                  onClick={() => onNavigate('admin')}
-                  className="hover:text-[#ee4957] transition-colors cursor-pointer"
-                >
-                  Acesso Administrativo
-                </button>
-              </li>
             </ul>
           </div>
 

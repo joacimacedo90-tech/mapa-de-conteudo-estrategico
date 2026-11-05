@@ -125,11 +125,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onOpenLgpd }) => {
           unverifiedReason: res.data.unverifiedReason
         });
 
-        if (res.data.followersCount !== undefined && res.data.followersCount > 0 && !inputFollowers) {
+        if (res.data.followersCount !== undefined && res.data.followersCount >= 0) {
           setInputFollowers(String(res.data.followersCount));
+          setEditingFollowers(String(res.data.followersCount));
         }
-        if (res.data.detectedNiche && !inputNiche) {
+        if (res.data.detectedNiche) {
           setInputNiche(res.data.detectedNiche);
+          setEditingNiche(res.data.detectedNiche);
         }
       }
     } catch {
@@ -139,9 +141,19 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onOpenLgpd }) => {
     }
   };
 
+  // Debounced auto-fetch as user types their username
+  useEffect(() => {
+    const clean = demoInstagram.replace(/^@/, '').trim();
+    if (!clean || clean.length < 3 || reelsResult) return;
+    const timer = setTimeout(() => {
+      triggerAutoDetection(clean);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [demoInstagram, reelsResult]);
+
   const handleUsernameBlur = () => {
     const clean = demoInstagram.replace(/^@/, '').trim();
-    if (!clean || reelsResult || inputFollowers) return;
+    if (!clean || reelsResult) return;
     triggerAutoDetection(clean);
   };
 
@@ -231,8 +243,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, onOpenLgpd }) => {
   };
 
   const handleCopyReelDay = (day: PublicReelsCalendarDay) => {
-    const text = `🎬 REEL DIA ${day.day}: ${day.theme}
-🎯 OBJETIVO: ${day.strategicObjective}
+    const text = `🎬 PROTOCOLO DE PLANEJAMENTO ESTRATÉGICO
+REEL DIA ${day.day}: ${day.theme}
+🎯 OBJETIVO ESTRATÉGICO: ${day.strategicObjective}
+⏰ MELHOR HORÁRIO: ${day.bestTime || '18h30 às 19h45'}
+🎯 MARKETING DE INTENÇÃO: ${day.intentMarketing || 'Gerar autoridade e atração'}
+⚡ OTIMIZAÇÃO ORGÂNICA: ${day.organicOptimization || 'Retenção acelerada nos primeiros 4s e cortes dinâmicos'}
+🛡️ FILTRO QMN (Qualidade Média do Nicho): ${day.qmnFilter || 'Supera o conteúdo comum com profundidade'}
 
 ⏱️ GANCHO 3 SEGUNDOS:
 "${day.hook3s}"
@@ -259,11 +276,11 @@ ${day.hashtags.join(' ')}`;
 
   const handleCopyAllCalendar = () => {
     if (!reelsResult) return;
-    const header = `📅 CALENDÁRIO ESTRATÉGICO DE 30 DIAS (REELS) - @${reelsResult.username.toUpperCase()}\nNicho: ${reelsResult.confirmedNiche}\n\n`;
+    const header = `📅 PROTOCOLO DE PLANEJAMENTO ESTRATÉGICO (30 DIAS DE REELS)\nPerfil: @${reelsResult.username.toUpperCase()}\nNicho Confirmado: ${reelsResult.confirmedNiche}\n\n`;
     const daysText = reelsResult.calendar
       .map(
         (day) =>
-          `📌 DIA ${day.day} [${day.strategicObjective}]\nTema: ${day.theme}\nGancho (3s): "${day.hook3s}"\nRoteiro: ${day.scriptStructure}\nComo Gravar: ${day.contentDevelopment}\nCTA: ${day.cta}\n`
+          `📌 DIA ${day.day} [${day.strategicObjective}] • Horário: ${day.bestTime || '18h30'}\nIntenção: ${day.intentMarketing || 'Autoridade'}\nTema: ${day.theme}\nGancho (3s): "${day.hook3s}"\nRoteiro: ${day.scriptStructure}\nComo Gravar: ${day.contentDevelopment}\nCTA: ${day.cta}\nQMN: ${day.qmnFilter || 'Qualidade Superior'}\n`
       )
       .join('\n----------------------------------------\n\n');
 
@@ -318,15 +335,15 @@ ${day.hashtags.join(' ')}`;
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 font-semibold tracking-wide">
             <span className="w-2 h-2 rounded-full bg-[#ee4957] animate-pulse" />
-            <span>Mapa de Conteúdo Estratégico</span>
+            <span>Mapa de Conteúdo Estratégico • Plataforma Oficial</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight font-heading leading-tight">
-            Descubra o potencial estratégico do seu <span className="bg-gradient-to-r from-[#ee4957] via-[#ff6b78] to-amber-400 bg-clip-text text-transparent">Instagram</span>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight font-heading leading-tight uppercase">
+            PROTOCOLO DE PLANEJAMENTO <span className="bg-gradient-to-r from-[#ee4957] via-[#ff6b78] to-amber-400 bg-clip-text text-transparent">ESTRATÉGICO</span>
           </h1>
 
           <p className="text-xs sm:text-sm text-zinc-400 max-w-md mx-auto leading-relaxed">
-            Informe seu @ e descubra como posicionar seu perfil, atrair o público certo e construir um caminho estratégico para crescer e vender.
+            Acelere a atração orgânica, o posicionamento de autoridade e a conversão do seu perfil no Instagram com Marketing de Intenção e Filtro QMN.
           </p>
         </div>
 
@@ -353,12 +370,75 @@ ${day.hashtags.join(' ')}`;
                   value={demoInstagram}
                   onChange={(e) => setDemoInstagram(e.target.value)}
                   onBlur={handleUsernameBlur}
-                  placeholder="seu.perfil (ex: ojoacimacedo)"
+                  placeholder="seu.perfil"
                   disabled={generatingCalendar}
                   required
                   className="w-full pl-8 pr-4 py-3 rounded-xl bg-[#09090d] border border-zinc-700/80 text-white placeholder-zinc-500 text-sm focus:outline-none focus:border-[#ee4957] transition-colors"
                 />
               </div>
+
+              {/* CARD DE FEEDBACK EM TEMPO REAL DO PERFIL IDENTIFICADO */}
+              {profileFoundData && (
+                <div className="mt-3 p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
+                        {profileFoundData.profilePictureUrl ? (
+                          <img
+                            src={profileFoundData.profilePictureUrl}
+                            alt={profileFoundData.displayName || demoInstagram}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-xs font-bold text-white">
+                            {(profileFoundData.displayName || demoInstagram).slice(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-white">
+                            {profileFoundData.displayName || `@${demoInstagram.replace(/^@/, '')}`}
+                          </span>
+                          {profileFoundData.publicProfileVerified && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              Verificado
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-zinc-400">
+                          {profileFoundData.followersCount !== undefined ? (
+                            <span className="text-emerald-400 font-bold">
+                              {profileFoundData.followersCount.toLocaleString('pt-BR')} seguidores reais identificados
+                            </span>
+                          ) : (
+                            <span className="text-amber-400">
+                              Seguidores não obtidos automaticamente (informe abaixo)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {profileFoundData.detectedNiche && (
+                    <div className="text-[11px] text-zinc-300 pt-1 border-t border-zinc-900 flex items-center justify-between">
+                      <span>Nicho identificado: <strong className="text-white">{profileFoundData.detectedNiche}</strong></span>
+                      <span className="text-[10px] text-zinc-500 font-mono">IA Analítica</span>
+                    </div>
+                  )}
+
+                  {profileFoundData.source && (
+                    <div className="text-[10px] text-zinc-500 flex items-center justify-between">
+                      <span>Fonte: {profileFoundData.source}</span>
+                      {profileFoundData.queriedAt && (
+                        <span>{new Date(profileFoundData.queriedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Campo 2: Melhor e-mail */}
@@ -414,20 +494,20 @@ ${day.hashtags.join(' ')}`;
                   type="number"
                   value={inputFollowers}
                   onChange={(e) => setInputFollowers(e.target.value)}
-                  placeholder="Ex: 1450 (ou deixe em branco se o perfil for público)"
+                  placeholder="Ex: 1450"
                   disabled={generatingCalendar}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#09090d] border border-zinc-700/80 text-white placeholder-zinc-500 text-xs sm:text-sm focus:outline-none focus:border-[#ee4957] transition-colors"
                 />
               </div>
               <p className="text-[11px] text-zinc-500 mt-1">
-                Usamos o número exato de seguidores para projetar o crescimento realista do perfil sem números fictícios.
+                Usamos o número exato de seguidores reais para calibrar o alcance e o crescimento sem números fictícios.
               </p>
             </div>
 
-            {/* Campo de Nicho Opcional Pré-envio */}
+            {/* Campo de Nicho com opção de correção manual */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                Nicho de atuação <span className="text-zinc-500 font-normal text-[11px]">(ou deixe em branco para auto-identificar com IA)</span>
+                Nicho de atuação <span className="text-zinc-500 font-normal text-[11px]">(identificado automaticamente com opção de ajuste)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
@@ -437,7 +517,7 @@ ${day.hashtags.join(' ')}`;
                   type="text"
                   value={inputNiche}
                   onChange={(e) => setInputNiche(e.target.value)}
-                  placeholder="Ex: Odontologia Estética, Advocacia Civil, Personal Trainer..."
+                  placeholder="Ex: Posicionamento Digital, Odontologia Estética, Personal Trainer..."
                   disabled={generatingCalendar}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[#09090d] border border-zinc-700/80 text-white placeholder-zinc-500 text-xs sm:text-sm focus:outline-none focus:border-[#ee4957] transition-colors"
                 />
@@ -1064,6 +1144,45 @@ ${day.hashtags.join(' ')}`;
                       </p>
                     </div>
 
+                    {/* Metadados Estratégicos do Post */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+                        <span className="text-[10px] font-black uppercase text-amber-400 block tracking-wider">
+                          ⏰ Melhor Horário Sugerido:
+                        </span>
+                        <p className="text-xs font-semibold text-zinc-200 mt-0.5">
+                          {activeReel.bestTime || '18h30 às 19h45 (Pico Noturno)'}
+                        </p>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+                        <span className="text-[10px] font-black uppercase text-purple-400 block tracking-wider">
+                          🎯 Marketing de Intenção:
+                        </span>
+                        <p className="text-xs font-semibold text-zinc-200 mt-0.5">
+                          {activeReel.intentMarketing || 'Gerar autoridade e credibilidade imediata'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+                      <span className="text-[10px] font-black uppercase text-emerald-400 block tracking-wider">
+                        ⚡ Otimização Orgânica:
+                      </span>
+                      <p className="text-xs text-zinc-300 mt-0.5 leading-relaxed">
+                        {activeReel.organicOptimization || 'Retenção acelerada nos primeiros 4 segundos, cortes dinâmicos e convite a salvar no terço final.'}
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800">
+                      <span className="text-[10px] font-black uppercase text-[#ee4957] block tracking-wider">
+                        🛡️ Filtro QMN (Qualidade Média do Nicho):
+                      </span>
+                      <p className="text-xs text-zinc-300 mt-0.5 leading-relaxed">
+                        {activeReel.qmnFilter || 'Supera o conteúdo comum com fundamentos práticos de mercado e diferenciação real.'}
+                      </p>
+                    </div>
+
                     <div className="p-2.5 rounded-xl bg-[#ee4957]/10 border border-[#ee4957]/20">
                       <span className="text-[10px] font-black uppercase text-[#ee4957] block">
                         📣 Chamada para Ação (CTA):
@@ -1132,25 +1251,253 @@ ${day.hashtags.join(' ')}`;
               )}
             </div>
 
-            {/* CONVITE COMERCIAL: PLANOS OFICIAIS */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-zinc-900 to-[#17141a] border border-[#ee4957]/30 text-center space-y-3">
-              <div className="inline-flex items-center gap-1 text-[#ee4957] text-xs font-bold uppercase">
-                <Lock className="w-3.5 h-3.5" />
-                <span>Planos Comerciais do Mapa de Conteúdo</span>
+            {/* SEÇÃO 8: ANÁLISE FINAL DO CALENDÁRIO (3 GRUPOS DE DESTAQUE ESTRATÉGICO) */}
+            <div className="bg-[#121217] border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-4">
+              <div className="border-b border-zinc-800 pb-3">
+                <span className="text-[10px] font-black uppercase text-[#ee4957] tracking-wider block">
+                  Seção 8 • Protocolo de Inteligência
+                </span>
+                <h3 className="text-base sm:text-lg font-extrabold text-white font-heading mt-0.5">
+                  Análise Estratégica do Calendário de 30 Dias
+                </h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Mapeamento dos melhores pontos de tração para acelerar o perfil de @{reelsResult.username}:
+                </p>
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-white font-heading">
-                Quer desbloquear diagnósticos profundos e carrosséis estruturados?
-              </h3>
-              <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                Conheça nossos planos comerciais com liberação instantânea e garantia de 7 dias via Hotmart.
-              </p>
-              <button
-                type="button"
-                onClick={() => onNavigate('comparison')}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md"
-              >
-                Ver Planos Disponíveis →
-              </button>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {/* Grupo 1: Maior Potencial de Alcance */}
+                <div className="p-4 rounded-xl bg-zinc-950 border border-amber-500/30 space-y-2">
+                  <div className="flex items-center gap-1.5 text-amber-400 font-bold text-xs uppercase tracking-wide">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Maior Alcance</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    {reelsResult.strategicHighlights?.reachSummary ||
+                      'Vídeos projetados com gatilhos de curiosidade ampla e forte propensão a compartilhamentos espontâneos.'}
+                  </p>
+                  <div className="pt-2 border-t border-zinc-900 flex flex-wrap gap-1.5">
+                    {(reelsResult.strategicHighlights?.highestReach || reelsResult.calendar.slice(0, 3)).map((item) => (
+                      <button
+                        key={item.day}
+                        type="button"
+                        onClick={() => selDia(item.day - 1)}
+                        className="px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold text-[10px] border border-amber-500/30 transition-colors cursor-pointer"
+                      >
+                        Dia {item.day} • {item.strategicObjective}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grupo 2: Maior Geração de Seguidores */}
+                <div className="p-4 rounded-xl bg-zinc-950 border border-emerald-500/30 space-y-2">
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-xs uppercase tracking-wide">
+                    <Users className="w-4 h-4" />
+                    <span>Geração de Seguidores</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    {reelsResult.strategicHighlights?.followersSummary ||
+                      'Conteúdos densos que transmitem autoridade inquestionável, motivando quem assiste a seguir imediatamente.'}
+                  </p>
+                  <div className="pt-2 border-t border-zinc-900 flex flex-wrap gap-1.5">
+                    {(reelsResult.strategicHighlights?.highestFollowerGain || reelsResult.calendar.slice(3, 6)).map((item) => (
+                      <button
+                        key={item.day}
+                        type="button"
+                        onClick={() => selDia(item.day - 1)}
+                        className="px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30 transition-colors cursor-pointer"
+                      >
+                        Dia {item.day} • {item.strategicObjective}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grupo 3: Candidatos para Orgânico Turbinado */}
+                <div className="p-4 rounded-xl bg-zinc-950 border border-purple-500/30 space-y-2">
+                  <div className="flex items-center gap-1.5 text-purple-400 font-bold text-xs uppercase tracking-wide">
+                    <Zap className="w-4 h-4" />
+                    <span>Orgânico Turbinado</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    {reelsResult.strategicHighlights?.paidTrafficSummary ||
+                      'Postagens com gancho afiado e CTA comercial direta, perfeitas para impulsionamento estratégico.'}
+                  </p>
+                  <div className="pt-2 border-t border-zinc-900 flex flex-wrap gap-1.5">
+                    {(reelsResult.strategicHighlights?.paidTrafficCandidates || reelsResult.calendar.slice(6, 9)).map((item) => (
+                      <button
+                        key={item.day}
+                        type="button"
+                        onClick={() => selDia(item.day - 1)}
+                        className="px-2 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-bold text-[10px] border border-purple-500/30 transition-colors cursor-pointer"
+                      >
+                        Dia {item.day} • {item.strategicObjective}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SEÇÃO 7: ESTRATÉGIA DE CONVERSÃO & ECOSSISTEMA COMPLETO (PÓS-TESTE) */}
+            <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-[#1c141c] via-[#121217] to-[#1a1215] border-2 border-[#ee4957] shadow-2xl shadow-[#ee4957]/20 space-y-6">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#ee4957] text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
+                ✦ Protocolo de Planejamento Estratégico Completo
+              </span>
+
+              {/* 1. Validação do Momento */}
+              <div className="space-y-2">
+                <h3 className="text-lg sm:text-2xl font-black text-white font-heading leading-tight">
+                  Parabéns! Você tem 30 roteiros de Reels para dominar o nicho de <span className="bg-gradient-to-r from-[#ee4957] to-amber-300 bg-clip-text text-transparent">{reelsResult.confirmedNiche}</span>.
+                </h3>
+                <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                  Esta demonstração gratuita entregou a base de atração em vídeo curto para o seu perfil @{reelsResult.username}.
+                </p>
+              </div>
+
+              {/* 2. Revelação do Limite do Formato Gratuito */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-zinc-950/80 border border-zinc-800 space-y-3">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wide">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>Por que Reels sozinhos NÃO constroem um negócio milionário no Instagram?</span>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  O Reels é o melhor formato de <strong className="text-zinc-200">topo de funil</strong> (descoberta rápida). No entanto, o público não compra de quem apenas faz vídeos curtos. Para transformar espectadores em clientes fiéis e de alto valor, você precisa da <strong className="text-white">ecologia de 4 formatos completos</strong>:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
+                  <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800">
+                    <strong className="block text-white font-bold mb-1">📚 Carrosséis Profundos</strong>
+                    <span className="text-zinc-400 text-[11px]">Geram autoridade inabalável, alta taxa de salvamento e qualificam a decisão de compra.</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800">
+                    <strong className="block text-white font-bold mb-1">🖼️ Posts de Feed Perenes</strong>
+                    <span className="text-zinc-400 text-[11px]">Constroem sua vitrine institucional, provas sociais e posicionamento inegociável.</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-zinc-900/90 border border-zinc-800">
+                    <strong className="block text-white font-bold mb-1">🔥 Stories Diários com Intenção</strong>
+                    <span className="text-zinc-400 text-[11px]">O motor de relacionamento íntimo e conversão diária que fecha vendas no Direct.</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Oferta do Ecossistema Completo (Upsell dos Planos Pagos) */}
+              <div className="space-y-4">
+                <div className="text-center space-y-1">
+                  <h4 className="text-base sm:text-xl font-extrabold text-white font-heading">
+                    Desbloqueie o Ecossistema Completo do Protocolo
+                  </h4>
+                  <p className="text-xs text-zinc-400 max-w-lg mx-auto">
+                    Garanta o planejamento editorial completo com distribuição balanceada de Reels, Carrosséis, Feed e Stories, além de diagnósticos de posicionamento e acompanhamento.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Plano Essencial */}
+                  <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between space-y-3">
+                    <div>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Entrada Rápida</span>
+                      <h5 className="text-sm font-bold text-white mt-0.5">Plano Essencial</h5>
+                      <div className="text-lg font-black text-white mt-1">R$ 47</div>
+                      <ul className="space-y-1.5 text-[11px] text-zinc-400 mt-2">
+                        <li className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>Diagnóstico Completo de Bio & Posicionamento</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>Projeção de Crescimento em 90 Dias</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>30 Ideias de Conteúdo Estratégico</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('comparison')}
+                      className="w-full py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition-colors cursor-pointer"
+                    >
+                      Aderir por R$ 47
+                    </button>
+                  </div>
+
+                  {/* Plano Pro (Destaque) */}
+                  <div className="relative p-4 rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-950 border-2 border-[#ee4957] shadow-lg shadow-[#ee4957]/15 flex flex-col justify-between space-y-3">
+                    <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-[#ee4957] text-white text-[9px] font-black uppercase tracking-wider">
+                      Mais Recomendado
+                    </span>
+                    <div>
+                      <span className="text-[10px] font-bold text-[#ee4957] uppercase tracking-wider">Ecologia Completa</span>
+                      <h5 className="text-sm font-bold text-white mt-0.5">Plano Estratégico Pro</h5>
+                      <div className="text-xl font-black text-white mt-1">
+                        R$ 97 <span className="text-xs text-zinc-500 font-normal line-through">R$ 197</span>
+                      </div>
+                      <ul className="space-y-1.5 text-[11px] text-zinc-300 mt-2">
+                        <li className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <strong className="text-white">Os 4 Formatos Integrados:</strong>
+                        </li>
+                        <li className="text-[10px] text-zinc-400 pl-4">
+                          Reels + Carrosséis + Feed + Stories diários
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>Diagnóstico de Furos de Conversão</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>Banco de Ganchos e CTAs para Direct</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('comparison')}
+                      className="w-full py-2.5 rounded-xl bg-[#ee4957] hover:bg-[#d93c4a] text-white font-black text-xs uppercase tracking-wider transition-colors cursor-pointer shadow-md"
+                    >
+                      Desbloquear Plano PRO →
+                    </button>
+                  </div>
+
+                  {/* Plano Premium */}
+                  <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800 flex flex-col justify-between space-y-3">
+                    <div>
+                      <span className="text-[10px] font-bold text-purple-400 uppercase tracking-wider">Assessoria VIP</span>
+                      <h5 className="text-sm font-bold text-white mt-0.5">Plano Premium VIP</h5>
+                      <div className="text-lg font-black text-white mt-1">R$ 197</div>
+                      <ul className="space-y-1.5 text-[11px] text-zinc-400 mt-2">
+                        <li className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>Tudo do Plano Pro</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>Consultoria e Suporte Prioritário</span>
+                        </li>
+                        <li className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>Roteiros Completos de Vendas</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('comparison')}
+                      className="w-full py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs transition-colors cursor-pointer"
+                    >
+                      Aderir por R$ 197
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 text-center text-[11px] text-zinc-500 flex items-center justify-center gap-3">
+                  <span>🔒 Processamento seguro via Hotmart</span>
+                  <span>•</span>
+                  <span>🛡️ Garantia incondicional de 7 dias</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1172,7 +1519,7 @@ ${day.hashtags.join(' ')}`;
               onClick={() => onNavigate('login')}
               className="hover:text-zinc-400 transition-colors cursor-pointer"
             >
-              Área do Cliente / Admin
+              Área do Cliente
             </button>
           </div>
         </footer>

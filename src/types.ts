@@ -390,6 +390,19 @@ export interface PublicReelsCalendarDay {
   cta: string;
   suggestedCaption: string;
   hashtags: string[];
+  bestTime?: string;
+  organicOptimization?: string;
+  intentMarketing?: string;
+  qmnFilter?: string;
+}
+
+export interface StrategicHighlights {
+  highestReach: PublicReelsCalendarDay[];
+  highestFollowerGain: PublicReelsCalendarDay[];
+  paidTrafficCandidates: PublicReelsCalendarDay[];
+  reachSummary?: string;
+  followersSummary?: string;
+  paidTrafficSummary?: string;
 }
 
 export interface ProfileProjection {
@@ -435,6 +448,7 @@ export interface PublicReelsDemoResult {
   totalDays: 30;
   projection: ProfileProjection;
   calendar: PublicReelsCalendarDay[];
+  strategicHighlights?: StrategicHighlights;
   verifiedLive?: boolean;
   queriedAt?: string;
   source?: string;

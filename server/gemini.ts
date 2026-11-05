@@ -12,7 +12,8 @@ import {
   PublicReelsCalendarDay,
   PublicReelsDemoResult,
   ReelStrategicObjective,
-  ProfileProjection
+  ProfileProjection,
+  StrategicHighlights
 } from '../src/types';
 
 const ai = new GoogleGenAI({
@@ -885,12 +886,24 @@ function completeTo90DaysCalendar(raw: CalendarDay[], params: GenerateParams): C
 // DEMONSTRAÇÃO INTELIGENTE: IDENTIFICAÇÃO DE NICHO & REELS
 // ========================================================
 
+async function callGeminiWithTimeout<T>(callFn: () => Promise<T>, timeoutMs = 6500): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('GEMINI_TIMEOUT_EXCEEDED')), timeoutMs);
+  });
+  try {
+    return await Promise.race([callFn(), timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function callGeminiWithRetry<T>(callFn: () => Promise<T>, maxRetries = 2): Promise<T> {
   let attempt = 0;
   let delay = 1000;
   while (true) {
     try {
-      return await callFn();
+      return await callGeminiWithTimeout(callFn, 6500);
     } catch (err: unknown) {
       attempt++;
       const errStr = err instanceof Error ? err.message : String(err);
@@ -899,14 +912,15 @@ async function callGeminiWithRetry<T>(callFn: () => Promise<T>, maxRetries = 2):
         errStr.includes('overloaded') ||
         errStr.includes('RESOURCE_EXHAUSTED') ||
         errStr.includes('UNAVAILABLE') ||
-        errStr.includes('rate limit');
+        errStr.includes('rate limit') ||
+        errStr.includes('GEMINI_TIMEOUT_EXCEEDED');
 
       if (is503OrOverloaded && attempt <= maxRetries) {
         console.warn(
-          `[GEMINI_503_RETRY] Modelo temporariamente sobrecarregado (503/rate limit). Tentativa ${attempt} de ${maxRetries} aguardando ${delay}ms...`
+          `[GEMINI_RETRY] Modelo temporariamente sobrecarregado ou timeout (${errStr}). Tentativa ${attempt} de ${maxRetries}...`
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
-        delay *= 2;
+        delay *= 1.5;
         continue;
       }
       throw err;
@@ -1208,12 +1222,65 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
 
     let days: PublicReelsCalendarDay[] = parsed.calendar || [];
 
+    // Helper to calculate strategic highlights
+    const extractStrategicHighlights = (calendarDays: PublicReelsCalendarDay[]): StrategicHighlights => {
+      // 1. Highest reach: discovery / sharing / wide hooks
+      const reachCandidates = calendarDays.filter(
+        (d) =>
+          d.intentMarketing?.toLowerCase().includes('compartilh') ||
+          d.intentMarketing?.toLowerCase().includes('atrair') ||
+          d.strategicObjective === 'Engajamento' ||
+          d.strategicObjective === 'Identificação com o público'
+      );
+      const highestReach = (reachCandidates.length >= 3 ? reachCandidates : calendarDays)
+        .slice(0, 4);
+
+      // 2. Highest follower gain: high authority, differentiation, depth
+      const followerCandidates = calendarDays.filter(
+        (d) =>
+          d.strategicObjective === 'Autoridade' ||
+          d.strategicObjective === 'Prova de conhecimento' ||
+          d.intentMarketing?.toLowerCase().includes('autoridade')
+      );
+      const highestFollowerGain = (followerCandidates.length >= 3 ? followerCandidates : calendarDays)
+        .slice(0, 4);
+
+      // 3. Paid traffic candidates: objection breaking, direct response, conversion
+      const trafficCandidates = calendarDays.filter(
+        (d) =>
+          d.strategicObjective === 'Conversão e vendas' ||
+          d.strategicObjective === 'Quebra de objeções' ||
+          d.intentMarketing?.toLowerCase().includes('oferta')
+      );
+      const paidTrafficCandidates = (trafficCandidates.length >= 3 ? trafficCandidates : calendarDays)
+        .slice(0, 4);
+
+      return {
+        highestReach,
+        highestFollowerGain,
+        paidTrafficCandidates,
+        reachSummary: `Vídeos com forte apelo de compartilhamento espontâneo e ganchos de alta curiosidade que acionam a distribuição orgânica para não-seguidores em ${niche}.`,
+        followersSummary: `Conteúdos que transmitem autoridade inquestionável e método validado, estimulando quem assiste a seguir imediatamente para acompanhar os próximos conteúdos.`,
+        paidTrafficSummary: `Estruturas de alto poder de conversão recomendadas para teste de tráfego pago estratégico (Orgânico Turbinado), amplificando o alcance de postagens validadas.`
+      };
+    };
+
     // Safety validate and ensure 30 days
     if (!Array.isArray(days) || days.length < 30) {
       console.warn(`[REELS_GEN] Retornou ${days?.length || 0} dias. Completando até 30 dias com o motor algorítmico do nicho.`);
       days = completeTo30Reels(days, cleanUser, niche, audience);
     } else {
-      // Normalize days numbers and objectives
+      // Normalize days numbers, objectives and new strategic fields
+      const timesCycle = ['18h30 às 19h45 (Pico Noturno)', '12h15 às 13h30 (Intervalo Almoço)', '08h00 às 09h15 (Checagem Matinal)'];
+      const intentCycle = [
+        'Atrair novos seguidores qualificados',
+        'Gerar autoridade e credibilidade imediata',
+        'Incentivar compartilhamentos espontâneos',
+        'Estimular salvamentos para consulta futura',
+        'Criar conexão genuína e identificação',
+        'Preparar o público para uma oferta direta'
+      ];
+
       days = days.slice(0, 30).map((d, idx) => ({
         day: idx + 1,
         theme: d.theme || `Estratégia prática para ${niche}`,
@@ -1225,9 +1292,15 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
         contentDevelopment: d.contentDevelopment || 'Grave em plano médio olhando firme para a câmera, com iluminação frontal.',
         cta: d.cta || 'Comente a sua dúvida aqui embaixo para eu te responder!',
         suggestedCaption: d.suggestedCaption || `Aplique esse método hoje mesmo no seu dia a dia em ${niche}. Salve para não esquecer!`,
-        hashtags: Array.isArray(d.hashtags) && d.hashtags.length > 0 ? d.hashtags : [`#${niche.toLowerCase().replace(/[^a-z0-9]/g, '')}`, '#conteudoestrategico', '#reelsbrasil']
+        hashtags: Array.isArray(d.hashtags) && d.hashtags.length > 0 ? d.hashtags : [`#${niche.toLowerCase().replace(/[^a-z0-9]/g, '')}`, '#conteudoestrategico', '#reelsbrasil'],
+        bestTime: d.bestTime || timesCycle[idx % timesCycle.length],
+        organicOptimization: d.organicOptimization || 'Retenção acelerada nos primeiros 4 segundos, cortes dinâmicos e convite a salvar no terço final.',
+        intentMarketing: d.intentMarketing || intentCycle[idx % intentCycle.length],
+        qmnFilter: d.qmnFilter || `Supera a Qualidade Média do Nicho (QMN) ao combater o senso comum de ${niche} com fundamentos práticos de mercado.`
       }));
     }
+
+    const strategicHighlights = extractStrategicHighlights(days);
 
     return {
       username: cleanUser,
@@ -1244,6 +1317,7 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
       totalDays: 30,
       projection: finalProjection,
       calendar: days,
+      strategicHighlights,
       verifiedLive,
       queriedAt,
       source,
@@ -1262,6 +1336,15 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
     const fallbackDays = generateFallback30Reels(cleanUser, niche, audience);
     const fallbackProjection = generateFallbackProjection(cleanUser, niche, audience, pData);
 
+    const strategicHighlights: StrategicHighlights = {
+      highestReach: [fallbackDays[0], fallbackDays[3], fallbackDays[5]],
+      highestFollowerGain: [fallbackDays[1], fallbackDays[4], fallbackDays[7]],
+      paidTrafficCandidates: [fallbackDays[6], fallbackDays[13], fallbackDays[20]],
+      reachSummary: `Vídeos com forte apelo de compartilhamento espontâneo e ganchos de alta curiosidade em ${niche}.`,
+      followersSummary: `Conteúdos que transmitem autoridade inquestionável, estimulando o usuário a seguir para acompanhar as próximas publicações.`,
+      paidTrafficSummary: `Estruturas de alta conversão recomendadas como candidatas a Orgânico Turbinado (impulsionamento estratégico).`
+    };
+
     return {
       username: cleanUser,
       displayName,
@@ -1277,6 +1360,7 @@ Retorne ESTRITAMENTE um JSON com esta estrutura:
       totalDays: 30,
       projection: fallbackProjection,
       calendar: fallbackDays,
+      strategicHighlights,
       verifiedLive: pData?.verifiedLive || false,
       queriedAt: pData?.queriedAt || new Date().toISOString(),
       source: pData?.source || (pData?.verifiedLive ? 'Instagram Live' : 'Dado informado pelo usuário'),
@@ -1368,6 +1452,10 @@ function generateFallback30Reels(
     dev: string;
     cta: string;
     caption: string;
+    bestTime: string;
+    intentMarketing: string;
+    organicOptimization: string;
+    qmnFilter: string;
   }> = [
     {
       theme: `O maior erro que vejo cometerem em ${niche}`,
@@ -1376,7 +1464,11 @@ function generateFallback30Reels(
       script: '0-3s: Gancho direto com corte seco | 3-15s: Explique por que 90% das pessoas erram nisso | 15-30s: Revele a alternativa correta e validada | 30-40s: CTA para direct.',
       dev: 'Grave falando diretamente para a lente, com expressão firme e texto sobreposto na tela nos primeiros 3 segundos.',
       cta: 'Comente "CORRIGIR" que eu te envio o passo a passo completo no direct.',
-      caption: `A maioria das pessoas perde tempo insistindo em métodos ultrapassados em ${niche}. Entenda o porquê e como virar essa chave hoje mesmo.`
+      caption: `A maioria das pessoas perde tempo insistindo em métodos ultrapassados em ${niche}. Entenda o porquê e como virar essa chave hoje mesmo.`,
+      bestTime: '18h30 às 19h45 (Pico Noturno)',
+      intentMarketing: 'Gerar autoridade e credibilidade imediata',
+      organicOptimization: 'Alta taxa de retenção nos primeiros 5s pelo elemento surpresa do erro.',
+      qmnFilter: 'Quebra o clichê do nicho apresentando uma visão contra-intuitiva com embasamento técnico.'
     },
     {
       theme: `Passo a passo simples para aplicar no dia a dia`,
@@ -1385,7 +1477,11 @@ function generateFallback30Reels(
       script: '0-3s: Gancho prático com o celular na mão | 3-20s: 3 passos enumerados com gestos de mão | 20-35s: Demonstração rápida do efeito | 35-45s: Salve o vídeo.',
       dev: 'Demonstre na prática com objetos ou tela de computador/celular em mãos para gerar dinamismo.',
       cta: 'Toque em Salvar para consultar esse checklist quando for executar.',
-      caption: `Você não precisa complicar. Quando você aplica esses 3 fundamentos em ${niche}, a evolução fica nítida.`
+      caption: `Você não precisa complicar. Quando você aplica esses 3 fundamentos em ${niche}, a evolução fica nítida.`,
+      bestTime: '12h15 às 13h30 (Intervalo Almoço)',
+      intentMarketing: 'Estimular salvamentos para consulta futura',
+      organicOptimization: 'Estimula tempo de tela longo e taxa de salvamento elevada.',
+      qmnFilter: 'Elimina jargões desnecessários e entrega aplicação prática imediata.'
     },
     {
       theme: `Você também sente essa dificuldade no seu dia a dia?`,
@@ -1394,7 +1490,11 @@ function generateFallback30Reels(
       script: '0-3s: Frase empática conectando com a dor de ${audience} | 3-18s: Conte como você ou um cliente vivia essa mesma situação | 18-35s: O momento da virada | 35-45s: Pergunta aberta.',
       dev: 'Cenário aconchegante, tom de voz acolhedor e pausado, como em uma conversa de café.',
       cta: 'Deixe um comentário: você também já passou por isso?',
-      caption: `Não é falta de capacidade, é falta do método correto para a sua realidade. Você não está sozinho nessa jornada.`
+      caption: `Não é falta de capacidade, é falta do método correto para a sua realidade. Você não está sozinho nessa jornada.`,
+      bestTime: '08h00 às 09h15 (Checagem Matinal)',
+      intentMarketing: 'Criar conexão genuína e identificação',
+      organicOptimization: 'Gera alto volume de comentários e respostas espontâneas.',
+      qmnFilter: 'Aborda a dor emocional real sem vitimismo, trazendo solução madura.'
     },
     {
       theme: `Por que você NÃO precisa gastar rios de dinheiro para começar`,
@@ -1403,7 +1503,11 @@ function generateFallback30Reels(
       script: '0-3s: Quebra de mito incisiva | 3-20s: Liste os 2 pontos que realmente movem o ponteiro sem gastar nada | 20-35s: Onde a maioria desperdiça dinheiro | 35-45s: CTA.',
       dev: 'Uso de legenda dinâmica em alta velocidade e cortes a cada 3 a 4 segundos para reter atenção.',
       cta: 'Compartilhe com um amigo que precisa ouvir essa verdade hoje.',
-      caption: `Mais importante que recursos financeiros extravagantes é dominar os princípios de base de ${niche}.`
+      caption: `Mais importante que recursos financeiros extravagantes é dominar os princípios de base de ${niche}.`,
+      bestTime: '18h30 às 19h45 (Pico Noturno)',
+      intentMarketing: 'Incentivar compartilhamentos espontâneos',
+      organicOptimization: 'Forte propensão a compartilhamento em grupos de WhatsApp e Direct.',
+      qmnFilter: 'Desmistifica uma barreira de entrada comum sem fazer falsas promessas.'
     },
     {
       theme: `Análise técnica de um caso real de transformação`,
@@ -1412,7 +1516,11 @@ function generateFallback30Reels(
       script: '0-3s: Apresente o resultado antes/depois | 3-18s: Diagnóstico do problema original | 18-32s: A intervenção técnica aplicada | 32-45s: O ensinamento geral.',
       dev: 'Mostre dados, telas, produtos ou bastidores reais que comprovem seu domínio.',
       cta: 'Quer que eu analise o seu caso? Mande uma mensagem no Direct.',
-      caption: `Os números e fatos não mentem. Técnica aplicada com consistência sempre supera palpites soltos.`
+      caption: `Os números e fatos não mentem. Técnica aplicada com consistência sempre supera palpites soltos.`,
+      bestTime: '12h15 às 13h30 (Intervalo Almoço)',
+      intentMarketing: 'Gerar autoridade e credibilidade imediata',
+      organicOptimization: 'Replay induzido pela riqueza visual de detalhes exibidos na tela.',
+      qmnFilter: 'Foco em estudo de caso verídico e método, muito acima de autoelogios vazios.'
     },
     {
       theme: `Qual dessas duas abordagens você prefere?`,
@@ -1421,16 +1529,24 @@ function generateFallback30Reels(
       script: '0-3s: Pergunta polarizada rápida | 3-15s: Prós e contras da Opção 1 | 15-28s: Prós e contras da Opção 2 | 28-35s: Seu veredito de especialista | 35-40s: Votação.',
       dev: 'Vídeo rápido, apontando para o lado esquerdo e direito da tela onde aparecem os textos A e B.',
       cta: 'Vote nos comentários: você é do time A ou do time B?',
-      caption: `Um dilema clássico em ${niche}. Deixe o seu voto sincero nos comentários!`
+      caption: `Um dilema clássico em ${niche}. Deixe o seu voto sincero nos comentários!`,
+      bestTime: '19h00 às 20h15 (Pico Noturno)',
+      intentMarketing: 'Atrair novos seguidores qualificados',
+      organicOptimization: 'Interações rápidas na seção de comentários expandem a entrega.',
+      qmnFilter: 'Apresenta ambas visões com discernimento profissional e sem polarização forçada.'
     },
     {
-      theme: `Vagas abertas e como funciona o acompanhamento exclusivo`,
+      theme: `Como funciona o acompanhamento estratégico individual`,
       objective: 'Conversão e vendas',
       hook3s: `Se você quer resolver isso de vez nos próximos 30 dias, assista até o final...`,
       script: '0-3s: Filtro de qualificação de público | 3-20s: Apresentação da solução e entregáveis | 20-35s: Para quem é e para quem não é | 35-45s: Chamada para ação na DM.',
       dev: 'Vestimenta alinhada, postura executiva de autoridade e chamada clara sem rodeios.',
       cta: 'Envie a palavra "PLANO" no meu Direct para receber as condições de acesso.',
-      caption: `As vagas para o nosso direcionamento individual estão abertas por tempo limitado. Envie uma mensagem privada para garantir a sua.`
+      caption: `As vagas para o nosso direcionamento individual estão abertas por tempo limitado. Envie uma mensagem privada para garantir a sua.`,
+      bestTime: '18h30 às 19h30 (Horário Comercial Fechamento)',
+      intentMarketing: 'Preparar o público para uma oferta direta',
+      organicOptimization: 'Retenção qualificada de prospects com alta intenção de compra.',
+      qmnFilter: 'Oferta transparente e profissional, sem gatilhos agressivos falsos.'
     }
   ];
 
@@ -1457,7 +1573,11 @@ function generateFallback30Reels(
       contentDevelopment: base.dev,
       cta: base.cta,
       suggestedCaption: base.caption,
-      hashtags
+      hashtags,
+      bestTime: base.bestTime,
+      intentMarketing: base.intentMarketing,
+      organicOptimization: base.organicOptimization,
+      qmnFilter: base.qmnFilter
     });
   }
 
@@ -1487,7 +1607,11 @@ function completeTo30Reels(
         contentDevelopment: found.contentDevelopment || fallback[i - 1].contentDevelopment,
         cta: found.cta || fallback[i - 1].cta,
         suggestedCaption: found.suggestedCaption || fallback[i - 1].suggestedCaption,
-        hashtags: found.hashtags && found.hashtags.length > 0 ? found.hashtags : fallback[i - 1].hashtags
+        hashtags: found.hashtags && found.hashtags.length > 0 ? found.hashtags : fallback[i - 1].hashtags,
+        bestTime: found.bestTime || fallback[i - 1].bestTime,
+        organicOptimization: found.organicOptimization || fallback[i - 1].organicOptimization,
+        intentMarketing: found.intentMarketing || fallback[i - 1].intentMarketing,
+        qmnFilter: found.qmnFilter || fallback[i - 1].qmnFilter
       });
     } else {
       result.push(fallback[i - 1]);
